@@ -11,8 +11,8 @@
 # Note: Variables should be all-lowercase and words can be seperated by '-'
 
 # general settings
-NAME="myname"
-PAPERABBREV="mypaper"
+NAME="CORA"
+PAPERABBREV="ZonoTack"
 
 # setup
 DATE=`date +%y%m%d-%H%M%S`

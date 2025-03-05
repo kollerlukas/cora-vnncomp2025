@@ -7,8 +7,8 @@ COPY code /code
 RUN sudo chown -R matlab /code
 
 # ./data
-COPY vnncomp2024_benchmarks /vnncomp2024_benchmarks
-RUN sudo chown -R matlab /vnncomp2024_benchmarks
+COPY data /data
+RUN sudo chown -R matlab /data
 
 # ./results
 RUN sudo mkdir /results
