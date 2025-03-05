@@ -197,9 +197,9 @@ function aux_printOptions(options)
     table.printContentRow('Poly. Method',options.nn.poly_method);
     table.printContentRow('Interval Center',options.nn.interval_center);
     table.printContentRow('Num. init. Generators', ...
-        options.nn.train.num_init_gens);
+        string(options.nn.train.num_init_gens));
     table.printContentRow('Num. approx. Error (per nonl. Layer)', ...
-        options.nn.train.num_approx_err);
+        string(options.nn.train.num_approx_err));
     table.printContentRow('approx. Error Heuristic', ...
         options.nn.approx_error_order);
     % Main algorithm options.
