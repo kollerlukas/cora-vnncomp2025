@@ -5,6 +5,10 @@ function res = prepare_instance(benchName,modelPath,vnnlibPath)
       % Load neural network.
       [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
           benchName,modelPath,vnnlibPath,false);
+
+      % Print the options.
+      aux_printOptions(options);
+
       fprintf(' done\n');
 
       fprintf('--- GPU available: %d\n',options.nn.train.use_gpu);
@@ -183,4 +187,33 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
           sprintf("Unknown benchmark '%s'!",benchName)));
   end
 
+end
+
+function aux_printOptions(options)
+    % Print parameters.
+    table = CORAtableParameters('neuralNetwork/verify Options');
+    table.printHeader();
+    % Zonotope propagation options.
+    table.printContentRow('Poly. Method',options.nn.poly_method);
+    table.printContentRow('Interval Center',options.nn.interval_center);
+    table.printContentRow('Num. init. Generators', ...
+        options.nn.train.num_init_gens);
+    table.printContentRow('Num. approx. Error (per nonl. Layer)', ...
+        options.nn.train.num_approx_err);
+    table.printContentRow('approx. Error Heuristic', ...
+        options.nn.approx_error_order);
+    % Main algorithm options.
+    table.printContentRow('Falsification Method', ...
+        options.nn.falsification_method);
+    table.printContentRow('Refinement Method', ...
+        options.nn.split_refinement_method);
+    % Details algorithm hyperparameters.
+    table.printContentRow('Num. of Splits', ...
+        options.nn.num_splits);
+    table.printContentRow('Num. of Dimensions', ...
+        options.nn.num_dimensions);
+    table.printContentRow('Num. of Neuron-Splits', ...
+        options.nn.num_neuron_splits);
+    % Finish table.
+    table.printFooter();
 end

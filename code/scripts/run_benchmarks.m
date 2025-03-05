@@ -5,7 +5,7 @@ function run_benchmarks(dataPath,resultsPath)
 maxNumCompThreads(4);
 
 % Get the basepath.
-basePath = pwd;
+basepath = pwd;
 
 % Specify base directory.
 benchmarksPath = sprintf('%s/vnncomp2024_benchmarks/benchmarks',dataPath);
@@ -24,7 +24,8 @@ for i=1:length(benchmarkDirs)
     % Run all instances of the benchmark.
     run_instances(benchmarkName,benchmarkResultsPath);
     % Go back to main directory.
-    cd(basePath);
+    cd(basepath);
+end
 end
 
 % Auxiliary Functions. ----------------------------------------------------
