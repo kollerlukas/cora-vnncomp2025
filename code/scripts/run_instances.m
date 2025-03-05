@@ -1,6 +1,6 @@
-% Specify benchmark name.
-dirs = regexp(pwd,'([^/]+)','match');
-benchName = dirs{end};
+function run_instances(benchmarkName,resultsPath)
+% Run all instances found in the current directory.
+
 % Obtain all instances.
 filename = 'instances.csv';
 instances = readtable(filename,'Delimiter',',');
@@ -15,10 +15,6 @@ vnnlibs = {};
 prepTimes = {};
 results = {};
 verifTimes = {};
-
-% Create results folder.
-resultsPath = './cora-results'; 
-mkdir(resultsPath);
 
 for i=1:size(instances,1) 
     % Extract current instance.
@@ -59,7 +55,7 @@ for i=1:size(instances,1)
     end
 
     % Store outputs.
-    benchmarkNames = [benchmarkNames; benchName];
+    benchmarkNames = [benchmarkNames; benchmarkName];
     models = [models; 'vnncomp2024_benchmarks/benchmarks/' benchName '/' modelPath];
     vnnlibs = [vnnlibs; 'vnncomp2024_benchmarks/benchmarks/' benchName '/' vnnlibPath];
     prepTimes = [prepTimes; 0];
@@ -73,3 +69,4 @@ resultsTable = table(benchmarkNames,models,vnnlibs,prepTimes,results, ...
 % Write to file.
 writetable(resultsTable,sprintf('%s/results.csv',resultsPath),...
     'WriteVariableNames',false);
+end
