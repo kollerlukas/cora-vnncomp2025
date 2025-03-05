@@ -209,11 +209,11 @@ function aux_printOptions(options)
         options.nn.split_refinement_method);
     % Details algorithm hyperparameters.
     table.printContentRow('Num. of Splits', ...
-        options.nn.num_splits);
+        string(options.nn.num_splits));
     table.printContentRow('Num. of Dimensions', ...
-        options.nn.num_dimensions);
+        string(options.nn.num_dimensions));
     table.printContentRow('Num. of Neuron-Splits', ...
-        options.nn.num_neuron_splits);
+        string(options.nn.num_neuron_splits));
     % Finish table.
     table.printFooter();
 end
