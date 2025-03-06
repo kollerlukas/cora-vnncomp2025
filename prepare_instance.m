@@ -6,9 +6,6 @@ function res = prepare_instance(benchName,modelPath,vnnlibPath)
       [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
           benchName,modelPath,vnnlibPath,false);
 
-      % Print the options.
-      aux_printOptions(options);
-
       fprintf(' done\n');
 
       fprintf('--- GPU available: %d\n',options.nn.train.use_gpu);
@@ -24,6 +21,9 @@ function res = prepare_instance(benchName,modelPath,vnnlibPath)
       % Store network, options, and specification.
       save(instanceFilename,'nn','options','permuteInputDims','X0','specs');
       fprintf(' done\n');
+
+      % Print the options.
+      aux_printOptions(options);
   catch e
       % Print the error message. 
       fprintf(newline);
@@ -191,7 +191,7 @@ end
 
 function aux_printOptions(options)
     % Print parameters.
-    table = CORAtableParameters('neuralNetwork/verify Options');
+    table = CORAtableParameters('neuralNetwork/verify options');
     table.printHeader();
     % Zonotope propagation options.
     table.printContentRow('Poly. Method',options.nn.poly_method);
