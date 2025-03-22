@@ -65,9 +65,12 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
             
             while true
                 try
+                    % options.nn.max_verif_iter = inf;
+                    % Set batch size to 1 for easier visualization.
+                    % options.nn.train.mini_batch_size = 1;
                     % Do verification.
                     [res_,x_,y_] = nn.verify(x,r,A,b,safeSet, ...
-                        options,timeout,verbose,false);
+                        options,timeout,verbose); % ,[1:2; 1:2]);
                     break;
                 catch e
                     if ismember(e.identifier, ...

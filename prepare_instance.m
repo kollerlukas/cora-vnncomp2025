@@ -47,7 +47,7 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
       'poly_method','bounds',...'bounds','singh'
       'train',struct(...
           'backprop',false,...
-          'mini_batch_size',512 ...
+          'mini_batch_size',2^10 ...
       ) ...
   );
   % Set default training parameters
@@ -63,6 +63,8 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
   % Set number of approximation error generators per layer.
   options.nn.train.num_approx_err = inf;
   options.nn.approx_error_order = 'sensitivity*length';
+  % Compute the exact bounds of the constraint zonotope.
+  options.nn.exact_conzonotope_bounds = false;
   % Specify number of splits, dimensions, and neuron-splits.
   options.nn.num_splits = 2; 
   options.nn.num_dimensions = 1;
@@ -82,7 +84,14 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
   elseif strcmp(benchName,'acasxu_2023')
       % acasxu ----------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BSSC');
-      % Use the default parameters.
+      % Specify an initial split (num pieces, num dimensions).
+      options.nn.init_split = [10 5];
+      % Specify number of splits, dimensions, and neuron-splits.
+      options.nn.num_splits = 5; 
+      options.nn.num_dimensions = 1;
+      options.nn.num_neuron_splits = 0;
+      % Increase batch size.
+      options.nn.train.mini_batch_size = 2^14;
   elseif strcmp(benchName,'cctsdb_yolo_2023')
       throw(CORAerror('CORA:notSupported',...
           sprintf("Benchmark '%s' not supported!",benchName)));
@@ -100,6 +109,7 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
       permuteInputDims = true;
       % Use interval-center.
       options.nn.interval_center = true;
+      options.nn.train.num_init_gens = 100;
       options.nn.train.num_approx_err = 0;
   elseif strcmp(benchName,'collins_aerospace_benchmark')
       throw(CORAerror('CORA:notSupported',...
@@ -111,6 +121,7 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
       permuteInputDims = true;
       % Use interval-center.
       options.nn.interval_center = true;
+      options.nn.train.num_init_gens = 100;
       options.nn.train.num_approx_err = 0;
   elseif strcmp(benchName,'collins_yolo_robustness_2023')
       throw(CORAerror('CORA:notSupported',...
@@ -118,6 +129,9 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
   elseif strcmp(benchName,'cora')
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
       % Use the default parameters.
+      options.nn.interval_center = false;
+      options.nn.train.num_init_gens = inf;
+      options.nn.train.num_approx_err = inf;
   elseif strcmp(benchName,'dist_shift_2023')
       % dist_shift ------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
@@ -136,6 +150,10 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS');
       % Bring input into the correct shape.
       permuteInputDims = true;
+      % Use interval-center.
+      options.nn.interval_center = true;
+      options.nn.train.num_init_gens = 100;
+      options.nn.train.num_approx_err = 0;
   elseif strcmp(benchName,'ml4acopf_2023')
       throw(CORAerror('CORA:notSupported',...
           sprintf("Benchmark '%s' not supported!",benchName)));
@@ -156,6 +174,8 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
   elseif strcmp(benchName,'safenlp')
       % safeNLP ---------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
+      % Increase batch size.
+      options.nn.train.mini_batch_size = 2^14;
       % Use the default parameters.
   elseif strcmp(benchName,'tinyimagenet')
       % vnncomp2024_cifar100_benchmark ----------------------------------
@@ -165,6 +185,7 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
       permuteInputDims = true;
       % Use interval-center.
       options.nn.interval_center = true;
+      options.nn.train.num_init_gens = 100;
       options.nn.train.num_approx_err = 0;
   elseif strcmp(benchName,'tllverifybench_2023')
       % tllverifybench --------------------------------------------------
