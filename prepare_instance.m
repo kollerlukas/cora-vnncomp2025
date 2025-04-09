@@ -57,7 +57,7 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
   % Specify falsification method: {'center','fgsm','zonotack'}.
   options.nn.falsification_method = 'zonotack';
   % Specify input set refinement method: {'naive','zonotack'}.
-  options.nn.split_refinement_method = 'zonotack';
+  options.nn.split_refinement_method = 'zonotack-layerwise';
   % Set number of input generators.
   options.nn.train.num_init_gens = inf;
   % Set number of approximation error generators per layer.
@@ -85,11 +85,13 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
       % acasxu ----------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BSSC');
       % Specify an initial split (num pieces, num dimensions).
-      options.nn.init_split = [10 5];
+      % options.nn.init_split = [10 5];
       % Specify number of splits, dimensions, and neuron-splits.
       options.nn.num_splits = 5; 
       options.nn.num_dimensions = 1;
       options.nn.num_neuron_splits = 0;
+      % Add relu tightening constraints.
+      options.nn.num_relu_tighten_constraints = inf;
       % Increase batch size.
       options.nn.train.mini_batch_size = 2^14;
   elseif strcmp(benchName,'cctsdb_yolo_2023')
