@@ -8,7 +8,7 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
         [instanceFilename,modelName,~] = ...
             getInstanceFilename(benchName,modelPath,vnnlibPath);
         % Load stored network and specification.
-        load(instanceFilename,'nn','options','permuteInputDims', ...
+        load(instanceFilename,'nn','options','permuteDims', ...
             'X0','specs');
         fprintf(' done\n');
         
@@ -18,13 +18,14 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
         fprintf(' done\n');
 
         % Obtain the model name.
-        if permuteInputDims
-            % if strcmp(benchName,'collins_rul_cnn_2023') && ~strcmp(modelName,'NN_rul_full_window_40')
-            %     inSize = nn.layers{1}.inputSize;
-            % else
-            %     inSize = nn.layers{1}.inputSize([2 1 3]);
-            % end
-            inSize = nn.layers{1}.inputSize([2 1 3]);
+        if permuteDims
+            if strcmp(benchName,'collins_rul_cnn_2023') ...
+                && ~strcmp(modelName,'NN_rul_full_window_40')
+                inSize = nn.layers{1}.inputSize;
+            else
+                inSize = nn.layers{1}.inputSize([2 1 3]);
+            end
+            % inSize = nn.layers{1}.inputSize([2 1 3]);
         end
 
         fprintf('--- Running verification...');
@@ -39,7 +40,7 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
             % Extract the i-th input set.
             xi = 1/2*(X0{j}.sup + X0{j}.inf);
             ri = 1/2*(X0{j}.sup - X0{j}.inf);
-            if permuteInputDims
+            if permuteDims
                 xi = reshape(permute(reshape(xi,inSize),[2 1 3]),[],1);
                 ri = reshape(permute(reshape(ri,inSize),[2 1 3]),[],1);
             end
@@ -137,7 +138,7 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
             elseif strcmp(res_.str,'COUNTEREXAMPLE')
                 res = 'sat';
                 % Reorder input dimensions...
-                if permuteInputDims
+                if permuteDims
                   x_ = reshape(permute(reshape(x_,inSize([2 1 3])),[2 1 3]),[],1);
                 end
                 % Write content.

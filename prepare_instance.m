@@ -3,7 +3,7 @@ function res = prepare_instance(benchName,modelPath,vnnlibPath)
   try
       fprintf('--- Loading network...');
       % Load neural network.
-      [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
+      [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
           benchName,modelPath,vnnlibPath,false);
 
       fprintf(' done\n');
@@ -19,7 +19,7 @@ function res = prepare_instance(benchName,modelPath,vnnlibPath)
       % Create filename.
       instanceFilename = getInstanceFilename(benchName,modelPath,vnnlibPath);
       % Store network, options, and specification.
-      save(instanceFilename,'nn','options','permuteInputDims','X0','specs');
+      save(instanceFilename,'nn','options','permuteDims','X0','specs');
       fprintf(' done\n');
 
       % Print the options.
@@ -38,7 +38,7 @@ end
 
 % Auxiliary functions -----------------------------------------------------
 
-function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
+function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   benchName,modelPath,vnnlibPath,verbose)
 
   % Create evaluation options.
@@ -52,12 +52,15 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
   );
   % Set default training parameters
   options = nnHelper.validateNNoptions(options,true);
+  % Disable the interval-center by default.
   options.nn.interval_center = false;
+  % Use the moving statistics for the batch normalization.
+  options.nn.batch_norm_moving_stats = true;
 
   % Specify falsification method: {'center','fgsm','zonotack'}.
   options.nn.falsification_method = 'zonotack';
   % Specify input set refinement method: {'naive','zonotack'}.
-  options.nn.split_refinement_method = 'zonotack-layerwise';
+  options.nn.refinement_method = 'zonotack-layerwise';
   % Set number of input generators.
   options.nn.train.num_init_gens = inf;
   % Set number of approximation error generators per layer.
@@ -66,12 +69,12 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
   % Compute the exact bounds of the constraint zonotope.
   options.nn.exact_conzonotope_bounds = false;
   % Specify number of splits, dimensions, and neuron-splits.
-  options.nn.num_splits = 2; 
+  options.nn.num_splits = 5; 
   options.nn.num_dimensions = 1;
-  options.nn.num_neuron_splits = 2;
+  options.nn.num_neuron_splits = 0;
 
   % Default: do not permute the input dimensions. 
-  permuteInputDims = false;
+  permuteDims = false;
 
   % Obtain the model name.
   [~,modelName,~] = getInstanceFilename(benchName,modelPath,vnnlibPath);
@@ -108,11 +111,13 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS', ...
           '','dagnetwork',true);
       % Bring input into the correct shape.
-      permuteInputDims = true;
+      permuteDims = true;
       % Use interval-center.
       options.nn.interval_center = true;
-      options.nn.train.num_init_gens = 100;
-      options.nn.train.num_approx_err = 0;
+      options.nn.train.num_init_gens = inf;
+      options.nn.train.num_approx_err = 100;
+      % Add relu tightening constraints.
+      options.nn.num_relu_tighten_constraints = 100;
   elseif strcmp(benchName,'collins_aerospace_benchmark')
       throw(CORAerror('CORA:notSupported',...
           sprintf("Benchmark '%s' not supported!",benchName)));
@@ -120,11 +125,20 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
       % collins_rul_cnn -------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS');
       % Bring input into the correct shape.
-      permuteInputDims = true;
+      permuteDims = true;
+      % Simpler methods suffice.
+      options.nn.falsification_method = 'fgsm';
+      options.nn.refinement_method = 'naive';
+      % Specify number of splits, dimensions, and neuron-splits.
+      options.nn.num_splits = 5; 
+      options.nn.num_dimensions = 1;
+      options.nn.num_neuron_splits = 0;
       % Use interval-center.
       options.nn.interval_center = true;
-      options.nn.train.num_init_gens = 100;
-      options.nn.train.num_approx_err = 0;
+      options.nn.train.num_init_gens = inf;
+      options.nn.train.num_approx_err = 100;
+      % Add relu tightening constraints.
+      options.nn.num_relu_tighten_constraints = 100;
   elseif strcmp(benchName,'collins_yolo_robustness_2023')
       throw(CORAerror('CORA:notSupported',...
           sprintf("Benchmark '%s' not supported!",benchName)));
@@ -134,6 +148,8 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
       options.nn.interval_center = false;
       options.nn.train.num_init_gens = inf;
       options.nn.train.num_approx_err = inf;
+      % Add relu tightening constraints.
+      options.nn.num_relu_tighten_constraints = 100;
   elseif strcmp(benchName,'dist_shift_2023')
       % dist_shift ------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
@@ -151,11 +167,11 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
       % metaroom --------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS');
       % Bring input into the correct shape.
-      permuteInputDims = true;
+      permuteDims = true;
       % Use interval-center.
       options.nn.interval_center = true;
-      options.nn.train.num_init_gens = 100;
-      options.nn.train.num_approx_err = 0;
+      options.nn.train.num_init_gens = 500;
+      options.nn.train.num_approx_err = 100;
   elseif strcmp(benchName,'ml4acopf_2023')
       throw(CORAerror('CORA:notSupported',...
           sprintf("Benchmark '%s' not supported!",benchName)));
@@ -184,7 +200,7 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS', ...
           '','dagnetwork',true);
       % Bring input into the correct shape.
-      permuteInputDims = true;
+      permuteDims = true;
       % Use interval-center.
       options.nn.interval_center = true;
       options.nn.train.num_init_gens = 100;
@@ -192,7 +208,9 @@ function [nn,options,permuteInputDims] = aux_readNetworkAndOptions( ...
   elseif strcmp(benchName,'tllverifybench_2023')
       % tllverifybench --------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
-      % Use the default parameters.
+      % Simpler methods suffice.
+      options.nn.falsification_method = 'fgsm';
+      options.nn.refinement_method = 'naive';
   elseif strcmp(benchName,'traffic_signs_recognition_2023')
       throw(CORAerror('CORA:notSupported',...
           sprintf("Benchmark '%s' not supported!",benchName)));
@@ -229,7 +247,7 @@ function aux_printOptions(options)
     table.printContentRow('Falsification Method', ...
         options.nn.falsification_method);
     table.printContentRow('Refinement Method', ...
-        options.nn.split_refinement_method);
+        options.nn.refinement_method);
     % Details algorithm hyperparameters.
     table.printContentRow('Num. of Splits', ...
         string(options.nn.num_splits));
