@@ -49,9 +49,14 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
             r = [r ri];
         end
 
-        % Extract specification.
+        % Store remaining timeout.
+        remTimeout = timeout;
+
+        % Measure verification time.
+        tic
         % Handle multiple specs.
         for i=1:length(specs)
+            % Extract specification.
             if isa(specs(i).set,'halfspace')
                 A = specs(i).set.c';
                 b = -specs(i).set.d;
@@ -61,9 +66,6 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
             end
             safeSet = strcmp(specs(i).type,'safeSet');
             
-            % Measure verification time.
-            tic
-            
             while true
                 try
                     % options.nn.max_verif_iter = inf;
@@ -71,7 +73,10 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
                     % options.nn.train.mini_batch_size = 1;
                     % Do verification.
                     [res_,x_,y_] = nn.verify(x,r,A,b,safeSet, ...
-                        options,timeout,verbose); % ,[1:2; 1:2]);
+                        options,remTimeout,verbose); % ,[1:2; 1:2]);
+                    % Reduce timeout in the case there are multiple input
+                    % sets.
+                    remTimeout = remTimeout - toc;
                     break;
                 catch e
                     if ismember(e.identifier, ...
