@@ -148,15 +148,9 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % Use the default parameters.
       options.nn.interval_center = true;
       options.nn.train.num_init_gens = inf;
-      options.nn.train.num_approx_err = 0; % inf;
+      options.nn.train.num_approx_err = inf;
       % Add relu tightening constraints.
-      % options.nn.num_relu_tighten_constraints = 100;
-      % Specify number of splits, dimensions, and neuron-splits.
-      options.nn.num_splits = 5; 
-      options.nn.num_dimensions = 1;
-      options.nn.num_neuron_splits = 0;
-      % Reduce batch size.
-      options.nn.train.mini_batch_size = 2^4;
+      options.nn.num_relu_tighten_constraints = 100;
   elseif strcmp(benchName,'dist_shift_2023')
       % dist_shift ------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
