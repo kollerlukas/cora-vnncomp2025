@@ -53,7 +53,7 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
         remTimeout = timeout;
 
         % Measure verification time.
-        tic
+        totalTime = tic;
         % Handle multiple specs.
         for i=1:length(specs)
             % Extract specification.
@@ -68,15 +68,12 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
             
             while true
                 try
-                    % options.nn.max_verif_iter = inf;
-                    % Set batch size to 1 for easier visualization.
-                    % options.nn.train.mini_batch_size = 1;
+                    % Reduce timeout in the case there are multiple 
+                    % input sets.
+                    remTimeout = remTimeout - toc;
                     % Do verification.
                     [res_,x_,y_] = nn.verify(x,r,A,b,safeSet, ...
                         options,remTimeout,verbose); % ,[1:2; 1:2]);
-                    % Reduce timeout in the case there are multiple input
-                    % sets.
-                    remTimeout = remTimeout - toc;
                     break;
                 catch e
                     if ismember(e.identifier, ...
@@ -189,7 +186,7 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
     if verbose
         % Print result.
         fprintf('%s -- %s: %s\n',modelPath,vnnlibPath,res);
-        time = toc;
+        time = toc(totalTime);
         fprintf('--- Verification time: %.4f / %.4f [s]\n',time,timeout);
     end
 

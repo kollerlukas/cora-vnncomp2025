@@ -69,9 +69,9 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   % Compute the exact bounds of the constraint zonotope.
   options.nn.exact_conzonotope_bounds = false;
   % Specify number of splits, dimensions, and neuron-splits.
-  options.nn.num_splits = 5; 
+  options.nn.num_splits = 2; 
   options.nn.num_dimensions = 1;
-  options.nn.num_neuron_splits = 0;
+  options.nn.num_neuron_splits = 2;
 
   % Default: do not permute the input dimensions. 
   permuteDims = false;
@@ -95,6 +95,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.num_neuron_splits = 0;
       % Add relu tightening constraints.
       options.nn.num_relu_tighten_constraints = inf;
+      options.nn.refinement_method = 'zonotack';
       % Increase batch size.
       options.nn.train.mini_batch_size = 2^14;
   elseif strcmp(benchName,'cctsdb_yolo_2023')
@@ -117,7 +118,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.train.num_init_gens = inf;
       options.nn.train.num_approx_err = 100;
       % Add relu tightening constraints.
-      % options.nn.num_relu_tighten_constraints = 100;
+      options.nn.num_relu_tighten_constraints = 100;
   elseif strcmp(benchName,'collins_aerospace_benchmark')
       throw(CORAerror('CORA:notSupported',...
           sprintf("Benchmark '%s' not supported!",benchName)));
@@ -145,11 +146,17 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   elseif strcmp(benchName,'cora')
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
       % Use the default parameters.
-      options.nn.interval_center = false;
+      options.nn.interval_center = true;
       options.nn.train.num_init_gens = inf;
-      options.nn.train.num_approx_err = inf;
+      options.nn.train.num_approx_err = 0; % inf;
       % Add relu tightening constraints.
       % options.nn.num_relu_tighten_constraints = 100;
+      % Specify number of splits, dimensions, and neuron-splits.
+      options.nn.num_splits = 5; 
+      options.nn.num_dimensions = 1;
+      options.nn.num_neuron_splits = 0;
+      % Reduce batch size.
+      options.nn.train.mini_batch_size = 2^4;
   elseif strcmp(benchName,'dist_shift_2023')
       % dist_shift ------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
