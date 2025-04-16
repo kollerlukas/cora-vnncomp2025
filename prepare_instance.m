@@ -95,9 +95,8 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.num_neuron_splits = 0;
       % Add relu tightening constraints.
       options.nn.num_relu_tighten_constraints = inf;
-      options.nn.refinement_method = 'zonotack';
       % Increase batch size.
-      options.nn.train.mini_batch_size = 2^14;
+      % options.nn.train.mini_batch_size = 2^14;
   elseif strcmp(benchName,'cctsdb_yolo_2023')
       throw(CORAerror('CORA:notSupported',...
           sprintf("Benchmark '%s' not supported!",benchName)));
@@ -115,10 +114,16 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       permuteDims = true;
       % Use interval-center.
       options.nn.interval_center = true;
-      options.nn.train.num_init_gens = inf;
-      options.nn.train.num_approx_err = 100;
+      options.nn.train.num_init_gens = 10;
+      options.nn.train.num_approx_err = 10; % 100;
       % Add relu tightening constraints.
-      options.nn.num_relu_tighten_constraints = 100;
+      options.nn.num_relu_tighten_constraints = 10;
+      % Specify number of splits, dimensions, and neuron-splits.
+      options.nn.num_splits = 5; 
+      options.nn.num_dimensions = 1;
+      options.nn.num_neuron_splits = 0;
+      % Reduce batch size.
+      options.nn.train.mini_batch_size = 2^5;
   elseif strcmp(benchName,'collins_aerospace_benchmark')
       throw(CORAerror('CORA:notSupported',...
           sprintf("Benchmark '%s' not supported!",benchName)));
@@ -151,6 +156,8 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.train.num_approx_err = inf;
       % Add relu tightening constraints.
       options.nn.num_relu_tighten_constraints = 100;
+
+      options.nn.train.mini_batch_size = 2^4;
   elseif strcmp(benchName,'dist_shift_2023')
       % dist_shift ------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
