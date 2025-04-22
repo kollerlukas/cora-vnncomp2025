@@ -59,10 +59,10 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
             % Extract specification.
             if isa(specs(i).set,'halfspace')
                 A = specs(i).set.c';
-                b = -specs(i).set.d;
+                b = specs(i).set.d;
             else
                 A = specs(i).set.A;
-                b = -specs(i).set.b;
+                b = specs(i).set.b;
             end
             safeSet = strcmp(specs(i).type,'safeSet');
             
