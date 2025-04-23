@@ -117,7 +117,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.train.num_init_gens = inf;
       options.nn.train.num_approx_err = 10;
       % Add relu tightening constraints.
-      options.nn.num_relu_tighten_constraints = 10;
+      % options.nn.num_relu_tighten_constraints = 10;
       % Specify number of splits, dimensions, and neuron-splits.
       options.nn.num_splits = 2; 
       options.nn.num_dimensions = 1;
@@ -208,12 +208,12 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
       % Increase batch size.
       options.nn.train.mini_batch_size = 2^10;
-      % % Specify number of splits, dimensions, and neuron-splits.
-      % options.nn.num_splits = 2; 
-      % options.nn.num_dimensions = 2;
-      % options.nn.num_neuron_splits = 2;
+      % Specify number of splits, dimensions, and neuron-splits.
+      options.nn.num_splits = 2; 
+      options.nn.num_dimensions = 1;
+      options.nn.num_neuron_splits = 0;
       % Add relu tightening constraints.
-      options.nn.num_relu_tighten_constraints = inf;
+      % options.nn.num_relu_tighten_constraints = inf;
   elseif strcmp(benchName,'tinyimagenet')
       % vnncomp2024_cifar100_benchmark ----------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS', ...
