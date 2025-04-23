@@ -3,6 +3,12 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
     fprintf('run_instance(%s,%s,%s,%s,%d,%d)...\n',benchName,modelPath, ...
         vnnlibPath,resultsPath,timeout,verbose);
     try
+        % Store remaining timeout.
+        remTimeout = timeout;
+
+        % Measure verification time.
+        totalTime = tic;
+
         fprintf('--- Loading MATLAB file...');
         % Create filename.
         [instanceFilename,modelName,~] = ...
@@ -32,8 +38,8 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
         if verbose
             fprintf('\n\n');
         end
-        % There can be multiple input set. 
-        % Concatenate the sets to a batch.
+
+        % There can be multiple input sets. Concatenate the sets to a batch.
         x = [];
         r = [];
         for j=1:length(X0)
@@ -49,11 +55,6 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
             r = [r ri];
         end
 
-        % Store remaining timeout.
-        remTimeout = timeout;
-
-        % Measure verification time.
-        totalTime = tic;
         % Handle multiple specs.
         for i=1:length(specs)
             % Extract specification.
