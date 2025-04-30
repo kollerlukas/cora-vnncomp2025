@@ -70,9 +70,9 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   % Specify number of splits, dimensions, and neuron-splits.
   options.nn.num_splits = 2; 
   options.nn.num_dimensions = 1;
-  options.nn.num_neuron_splits = 1;
+  options.nn.num_neuron_splits = 0;
   % Add relu tightening constraints.
-  options.nn.num_relu_constraints = 100;
+  options.nn.num_relu_constraints = 0;
   % Add input split constraints for refinement (only with 'zonotack').
   % options.nn.input_splits_constraints = false;
 
@@ -93,11 +93,11 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % Specify an initial split (num pieces, num dimensions).
       % options.nn.init_split = [2 5];
       % Specify number of splits, dimensions, and neuron-splits.
-      options.nn.num_splits = 5; 
-      options.nn.num_dimensions = 1;
-      options.nn.num_neuron_splits = 0;
+      % options.nn.num_splits = 5; 
+      % options.nn.num_dimensions = 1;
+      % options.nn.num_neuron_splits = 0;
       % Add relu tightening constraints.
-      options.nn.num_relu_constraints = 0;
+      % options.nn.num_relu_constraints = 10;
       % options.nn.neuron_xor_input_splits = true;
       % options.nn.input_splits_constraints = false;
   elseif strcmp(benchName,'cctsdb_yolo_2023')
@@ -116,17 +116,17 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % Bring input into the correct shape.
       permuteDims = true;
       % Requires less memory.
-      options.nn.falsification_method = 'fgsm';
+      % options.nn.falsification_method = 'fgsm';
       % Use interval-center.
       options.nn.interval_center = true;
-      options.nn.train.num_init_gens = 100;
-      options.nn.train.num_approx_err = 10;
+      options.nn.train.num_init_gens = 500;
+      options.nn.train.num_approx_err = 100;
       % Add relu tightening constraints.
-      options.nn.num_relu_constraints = 10;
+      % options.nn.num_relu_constraints = 100;
       % Specify number of splits, dimensions, and neuron-splits.
-      % options.nn.num_splits = 2; 
+      % options.nn.num_splits = 3; 
       % options.nn.num_dimensions = 1;
-      % options.nn.num_neuron_splits = 0;
+      % options.nn.num_neuron_splits = 3;
       % Save memory (reduce batch size & do not batch union constraints).
       options.nn.train.mini_batch_size = 2^2;
       options.nn.batch_union_conzonotope_bounds = false;
@@ -148,19 +148,19 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   elseif strcmp(benchName,'cora')
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
       % Requires less memory.
-      options.nn.falsification_method = 'fgsm';
+      % options.nn.falsification_method = 'fgsm';
       % Specify an initial split (num pieces, num dimensions).
       % options.nn.init_split = [4 2];
       % Use the default parameters.
       % options.nn.interval_center = false;
-      options.nn.train.num_init_gens = 500;
-      options.nn.train.num_approx_err = 100; % inf;
+      % options.nn.train.num_init_gens = inf;
+      % options.nn.train.num_approx_err = inf;
       % Add relu tightening constraints.
-      options.nn.num_relu_constraints = 100; % inf;
+      % options.nn.num_relu_constraints = 10;
       % Reduce batch size.
-      options.nn.train.mini_batch_size = 2^6;
+      options.nn.train.mini_batch_size = 2^5;
       % Specify number of splits, dimensions, and neuron-splits.
-      % options.nn.num_splits = 10; 
+      % options.nn.num_splits = 2; 
       % options.nn.num_dimensions = 1;
       % options.nn.num_neuron_splits = 0;
       % Save memory (do not batch union constraints).
