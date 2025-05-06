@@ -1,10 +1,10 @@
-function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
-    timeout,verbose)
+function [resStr,res] = run_instance(benchName,modelPath,vnnlibPath, ...
+    resultsPath,timeout,verbose)
     fprintf('run_instance(%s,%s,%s,%s,%d,%d)...\n',benchName,modelPath, ...
         vnnlibPath,resultsPath,timeout,verbose);
     try
         % Store remaining timeout.
-        remTimeout = timeout;
+        remTimeout = timeout*100;
 
         % Measure verification time.
         totalTime = tic;
@@ -73,7 +73,7 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
                     % input sets.
                     remTimeout = remTimeout - toc;
                     % Do verification.
-                    [res_,x_,y_] = nn.verify(x,r,A,b,safeSet, ...
+                    [res,x_,y_] = nn.verify(x,r,A,b,safeSet, ...
                         options,remTimeout,verbose); % ,[1:2; 1:2]);
                     break;
                 catch e
@@ -118,7 +118,7 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
                             classname,funcname,linenr,e.message);
                         fprintf(newline);
                         % No result.
-                        res_ = struct('str','unknown','time',-1);
+                        res = struct('str','unknown','time',-1);
                         break;
                     end
                 end
@@ -133,13 +133,13 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
     
             fprintf('--- writing file ...');
             % Write results.
-            if strcmp(res_.str,'VERIFIED')
-                res = 'unsat';
+            if strcmp(res.str,'VERIFIED')
+                resStr = 'unsat';
                 % Write content.
                 fprintf(fid,['unsat' newline]);
                 fclose(fid);
-            elseif strcmp(res_.str,'COUNTEREXAMPLE')
-                res = 'sat';
+            elseif strcmp(res.str,'COUNTEREXAMPLE')
+                resStr = 'sat';
                 % Reorder input dimensions...
                 if permuteDims
                   x_ = reshape(permute(reshape(x_,inSize([2 1 3])),[2 1 3]),[],1);
@@ -160,7 +160,7 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
                 % remaining specifications.
                 break;
             else
-                res = 'unknown';
+                resStr = 'unknown';
                 % We cannot verify an input set; we dont have to check the other
                 % input sets.
                 fprintf(fid,['unknown' newline]);
@@ -175,7 +175,7 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
     catch e
         fprintf(e.message);
         % There is some issue with the parsing; e.g. acasxu prop_6.vnnlib
-        res = 'unknown';
+        resStr = 'unknown';
         fprintf(' done\n');
 
         % Open results file.
@@ -186,7 +186,7 @@ function res = run_instance(benchName,modelPath,vnnlibPath,resultsPath, ...
 
     if verbose
         % Print result.
-        fprintf('%s -- %s: %s\n',modelPath,vnnlibPath,res);
+        fprintf('%s -- %s: %s\n',modelPath,vnnlibPath,resStr);
         time = toc(totalTime);
         fprintf('--- Verification time: %.4f / %.4f [s]\n',time,timeout);
     end

@@ -68,11 +68,11 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   % Compute the exact bounds of the constraint zonotope.
   options.nn.exact_conzonotope_bounds = false;
   % Specify number of splits, dimensions, and neuron-splits.
-  options.nn.num_splits = 2; 
+  options.nn.num_splits = 5; 
   options.nn.num_dimensions = 1;
-  options.nn.num_neuron_splits = 0;
+  options.nn.num_neuron_splits = 1;
   % Add relu tightening constraints.
-  options.nn.num_relu_constraints = 0;
+  options.nn.num_relu_constraints = 1;
   % Add input split constraints for refinement (only with 'zonotack').
   % options.nn.input_splits_constraints = false;
 
@@ -90,16 +90,13 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   elseif strcmp(benchName,'acasxu_2023')
       % acasxu ----------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BSSC');
-      % Specify an initial split (num pieces, num dimensions).
-      % options.nn.init_split = [2 5];
       % Specify number of splits, dimensions, and neuron-splits.
-      % options.nn.num_splits = 5; 
+      % options.nn.num_splits = 2; 
       % options.nn.num_dimensions = 1;
-      % options.nn.num_neuron_splits = 0;
+      % options.nn.num_neuron_splits = 1;
       % Add relu tightening constraints.
-      % options.nn.num_relu_constraints = 10;
-      % options.nn.neuron_xor_input_splits = true;
-      % options.nn.input_splits_constraints = false;
+      % options.nn.num_relu_constraints = 1;
+      % options.nn.train.mini_batch_size = 2^8;
   elseif strcmp(benchName,'cctsdb_yolo_2023')
       throw(CORAerror('CORA:notSupported',...
           sprintf("Benchmark '%s' not supported!",benchName)));
@@ -152,17 +149,17 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % Specify an initial split (num pieces, num dimensions).
       % options.nn.init_split = [4 2];
       % Use the default parameters.
-      % options.nn.interval_center = false;
-      % options.nn.train.num_init_gens = inf;
-      % options.nn.train.num_approx_err = inf;
+      % options.nn.interval_center = true;
+      options.nn.train.num_init_gens = inf;
+      options.nn.train.num_approx_err = 100;
       % Add relu tightening constraints.
-      % options.nn.num_relu_constraints = 10;
+      options.nn.num_relu_constraints = 100;
       % Reduce batch size.
       options.nn.train.mini_batch_size = 2^5;
       % Specify number of splits, dimensions, and neuron-splits.
       % options.nn.num_splits = 2; 
       % options.nn.num_dimensions = 1;
-      % options.nn.num_neuron_splits = 0;
+      % options.nn.num_neuron_splits = 2;
       % Save memory (do not batch union constraints).
       options.nn.batch_union_conzonotope_bounds = false;
       % options.nn.neuron_xor_input_splits = false;
@@ -188,6 +185,10 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.interval_center = true;
       options.nn.train.num_init_gens = 500;
       options.nn.train.num_approx_err = 100;
+      % Reduce the batch size.
+      options.nn.train.mini_batch_size = 2^7;
+      % Add relu tightening constraints.
+      % options.nn.num_relu_constraints = 100;
   elseif strcmp(benchName,'ml4acopf_2023')
       throw(CORAerror('CORA:notSupported',...
           sprintf("Benchmark '%s' not supported!",benchName)));
@@ -226,7 +227,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.falsification_method = 'fgsm';
       % Use interval-center.
       options.nn.interval_center = true;
-      options.nn.train.num_init_gens = 100;
+      options.nn.train.num_init_gens = 500;
       options.nn.train.num_approx_err = 10;
       % Add relu tightening constraints.
       options.nn.num_relu_constraints = 10;
