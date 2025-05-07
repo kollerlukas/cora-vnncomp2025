@@ -68,11 +68,11 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   % Compute the exact bounds of the constraint zonotope.
   options.nn.exact_conzonotope_bounds = false;
   % Specify number of splits, dimensions, and neuron-splits.
-  options.nn.num_splits = 5; 
+  options.nn.num_splits = 2; 
   options.nn.num_dimensions = 1;
-  options.nn.num_neuron_splits = 1;
+  options.nn.num_neuron_splits = 2;
   % Add relu tightening constraints.
-  options.nn.num_relu_constraints = 1;
+  options.nn.num_relu_constraints = 10;
   % Add input split constraints for refinement (only with 'zonotack').
   % options.nn.input_splits_constraints = false;
 
@@ -90,13 +90,15 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   elseif strcmp(benchName,'acasxu_2023')
       % acasxu ----------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BSSC');
+      % Specify an initial split (num pieces, num dimensions).
+      % options.nn.init_split = [5 5];
       % Specify number of splits, dimensions, and neuron-splits.
       % options.nn.num_splits = 2; 
       % options.nn.num_dimensions = 1;
       % options.nn.num_neuron_splits = 1;
       % Add relu tightening constraints.
       % options.nn.num_relu_constraints = 1;
-      % options.nn.train.mini_batch_size = 2^8;
+      options.nn.train.mini_batch_size = 2^8;
   elseif strcmp(benchName,'cctsdb_yolo_2023')
       throw(CORAerror('CORA:notSupported',...
           sprintf("Benchmark '%s' not supported!",benchName)));

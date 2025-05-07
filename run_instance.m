@@ -4,7 +4,7 @@ function [resStr,res] = run_instance(benchName,modelPath,vnnlibPath, ...
         vnnlibPath,resultsPath,timeout,verbose);
     try
         % Store remaining timeout.
-        remTimeout = timeout*100;
+        remTimeout = timeout;
 
         % Measure verification time.
         totalTime = tic;
