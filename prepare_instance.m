@@ -147,17 +147,17 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % Requires less memory.
       % options.nn.falsification_method = 'fgsm';
       % Specify an initial split (num pieces, num dimensions).
-      % options.nn.init_split = [4 2];
+      % options.nn.init_split = [2 10];
       % Use the default parameters.
       % options.nn.interval_center = true;
-      options.nn.train.num_init_gens = inf;
+      options.nn.train.num_init_gens = 500; % inf;
       options.nn.train.num_approx_err = 100;
       % Add relu tightening constraints.
-      options.nn.num_relu_constraints = 0; % 100;
+      options.nn.num_relu_constraints = 0;
       % Reduce batch size.
       options.nn.train.mini_batch_size = 2^5;
       % Specify number of splits, dimensions, and neuron-splits.
-      % options.nn.num_splits = 2; 
+      % options.nn.num_splits = 3; 
       % options.nn.num_dimensions = 1;
       % options.nn.num_neuron_splits = 2;
       % Save memory (do not batch union constraints).
@@ -186,7 +186,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.train.num_init_gens = 500;
       options.nn.train.num_approx_err = 100;
       % Reduce the batch size.
-      options.nn.train.mini_batch_size = 2^7;
+      options.nn.train.mini_batch_size = 2^2;
       % Add relu tightening constraints.
       % options.nn.num_relu_constraints = 100;
   elseif strcmp(benchName,'ml4acopf_2023')
