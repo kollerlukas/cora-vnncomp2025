@@ -60,7 +60,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   % Specify falsification method: {'center','fgsm','zonotack'}.
   options.nn.falsification_method = 'zonotack';
   % Specify input set refinement method: {'naive','zonotack','zonotack-layerwise'}.
-  options.nn.refinement_method = 'zonotack-layerwise';
+  options.nn.refinement_method = 'zonotack'; % -layerwise';
   % Set number of input generators.
   options.nn.train.num_init_gens = inf;
   % Set number of approximation error generators per layer.
@@ -68,11 +68,11 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   % Compute the exact bounds of the constraint zonotope.
   options.nn.exact_conzonotope_bounds = false;
   % Specify number of splits, dimensions, and neuron-splits.
-  options.nn.num_splits = 2; 
-  options.nn.num_dimensions = 2;
-  options.nn.num_neuron_splits = 0;
+  options.nn.num_splits = 3; 
+  options.nn.num_dimensions = 1;
+  options.nn.num_neuron_splits = 1;
   % Add relu tightening constraints.
-  options.nn.num_relu_constraints = 0;
+  options.nn.num_relu_constraints = 10;
 
   % Default: do not permute the input dimensions. 
   permuteDims = false;
@@ -153,7 +153,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.train.num_init_gens = 500; % inf;
       options.nn.train.num_approx_err = 100;
       % Add relu tightening constraints.
-      options.nn.num_relu_constraints = 0;
+      % options.nn.num_relu_constraints = 0;
       % Reduce batch size.
       options.nn.train.mini_batch_size = 2^5;
       % Specify number of splits, dimensions, and neuron-splits.
