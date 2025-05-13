@@ -44,7 +44,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   % Create evaluation options.
   options.nn = struct(...
       'use_approx_error',true,...
-      'poly_method','bounds',...'bounds','singh'
+      'poly_method','bounds',... {'bounds','singh','center'}
       'train',struct(...
           'backprop',false,...
           'mini_batch_size',2^10 ...
@@ -60,7 +60,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   % Specify falsification method: {'center','fgsm','zonotack'}.
   options.nn.falsification_method = 'zonotack';
   % Specify input set refinement method: {'naive','zonotack','zonotack-layerwise'}.
-  options.nn.refinement_method = 'zonotack'; % -layerwise';
+  options.nn.refinement_method = 'zonotack-layerwise';
   % Set number of input generators.
   options.nn.train.num_init_gens = inf;
   % Set number of approximation error generators per layer.
@@ -91,12 +91,13 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % Specify an initial split (num pieces, num dimensions).
       % options.nn.init_split = [5 5];
       % Specify number of splits, dimensions, and neuron-splits.
-      % options.nn.num_splits = 2; 
-      % options.nn.num_dimensions = 2;
-      % options.nn.num_neuron_splits = 0;
-      % % Add relu tightening constraints.
-      % options.nn.num_relu_constraints = 0;
-      % options.nn.train.mini_batch_size = 2^8;
+      options.nn.num_splits = 2; 
+      options.nn.num_dimensions = 1;
+      options.nn.num_neuron_splits = 0;
+      % Add relu tightening constraints.
+      options.nn.num_relu_constraints = 0;
+      options.nn.interval_center = true;
+      options.nn.train.num_approx_err = 25;
   elseif strcmp(benchName,'cctsdb_yolo_2023')
       throw(CORAerror('CORA:notSupported',...
           sprintf("Benchmark '%s' not supported!",benchName)));
@@ -149,15 +150,15 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % Specify an initial split (num pieces, num dimensions).
       % options.nn.init_split = [2 10];
       % Use the default parameters.
-      % options.nn.interval_center = true;
+      options.nn.interval_center = true;
       options.nn.train.num_init_gens = 500; % inf;
       options.nn.train.num_approx_err = 100;
       % Add relu tightening constraints.
-      % options.nn.num_relu_constraints = 0;
+      % options.nn.num_relu_constraints = inf;
       % Reduce batch size.
       options.nn.train.mini_batch_size = 2^5;
       % Specify number of splits, dimensions, and neuron-splits.
-      % options.nn.num_splits = 3; 
+      % options.nn.num_splits = 2; 
       % options.nn.num_dimensions = 1;
       % options.nn.num_neuron_splits = 2;
       % Save memory (do not batch union constraints).
@@ -210,7 +211,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % safeNLP ---------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
       % Increase batch size.
-      % options.nn.train.mini_batch_size = 2^5;
+      options.nn.train.mini_batch_size = 2^9;
       % Specify number of splits, dimensions, and neuron-splits.
       % options.nn.num_splits = 2; 
       % options.nn.num_dimensions = 1;
