@@ -2,6 +2,10 @@ function [resStr,res] = run_instance(benchName,modelPath,vnnlibPath, ...
     resultsPath,timeout,verbose)
     fprintf('run_instance(%s,%s,%s,%s,%d,%d)...\n',benchName,modelPath, ...
         vnnlibPath,resultsPath,timeout,verbose);
+
+    % Initialize the result.
+    res = struct('str','unknown','time',-1);
+
     try
         % Store remaining timeout.
         remTimeout = timeout;
@@ -74,7 +78,7 @@ function [resStr,res] = run_instance(benchName,modelPath,vnnlibPath, ...
                     remTimeout = remTimeout - toc;
                     % Do verification.
                     [res,x_,y_] = nn.verify(x,r,A,b,safeSet, ...
-                        options,remTimeout,verbose); % ,[1:2; 1:2]);
+                        options,remTimeout,verbose); % ,[2:3; 1:2]);
                     break;
                 catch e
                     if ismember(e.identifier, ...
@@ -117,8 +121,6 @@ function [resStr,res] = run_instance(benchName,modelPath,vnnlibPath, ...
                             'Unexpected Error! \n --- %s/%s [%d]: %s\n', ...
                             classname,funcname,linenr,e.message);
                         fprintf(newline);
-                        % No result.
-                        res = struct('str','unknown','time',-1);
                         break;
                     end
                 end
