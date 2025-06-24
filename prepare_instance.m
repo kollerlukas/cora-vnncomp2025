@@ -60,7 +60,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   % Specify falsification method: {'center','fgsm','zonotack'}.
   options.nn.falsification_method = 'zonotack';
   % Specify input set refinement method: {'naive','zonotack','zonotack-layerwise'}.
-  options.nn.refinement_method = 'zonotack-layerwise';
+  options.nn.refinement_method = 'zonotack';
   % Set number of input generators.
   options.nn.train.num_init_gens = inf;
   % Set number of approximation error generators per layer.
@@ -70,9 +70,13 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   % Specify number of splits, dimensions, and neuron-splits.
   options.nn.num_splits = 2; 
   options.nn.num_dimensions = 1;
-  options.nn.num_neuron_splits = 0;
+  options.nn.num_neuron_splits = 1;
   % Add relu tightening constraints.
   options.nn.num_relu_constraints = 0;
+  options.nn.add_orth_neuron_splits = true;
+  % Specify the number of iterations.
+  options.nn.polytope_bound_approx_max_iter = 8;
+  options.nn.refinement_max_iter = 8;
 
   % Default: do not permute the input dimensions. 
   permuteDims = false;
@@ -80,35 +84,35 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   % Obtain the model name.
   [~,modelName,~] = getInstanceFilename(benchName,modelPath,vnnlibPath);
 
+  % VNN-COMP'24 Benchmarks ------------------------------------------------
   if strcmp(benchName,'test') ...
     || strcmp(modelName{1},'test_nano') % is called after each benchmark
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'','', ...
           'dlnetwork',false);
       % Use the default parameters.
-  elseif strcmp(benchName,'acasxu_2023')
+  elseif strcmp(benchName,'acas_xu')
       % acasxu ----------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BSSC');
       % Specify an initial split (num pieces, num dimensions).
-      % options.nn.init_split = [5 5];
+      % options.nn.init_split = [25 2];
       % Specify number of splits, dimensions, and neuron-splits.
       options.nn.num_splits = 2; 
       options.nn.num_dimensions = 1;
       options.nn.num_neuron_splits = 0;
       % Add relu tightening constraints.
       options.nn.num_relu_constraints = 0;
-      options.nn.interval_center = true;
-      options.nn.train.num_approx_err = 25;
-  elseif strcmp(benchName,'cctsdb_yolo_2023')
-      throw(CORAerror('CORA:notSupported',...
-          sprintf("Benchmark '%s' not supported!",benchName)));
-  elseif strcmp(benchName,'cgan_2023')
-      % c_gan -----------------------------------------------------------
-      % nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
-      % --- TODO: implement convTranspose
-      throw(CORAerror('CORA:notSupported',...
-          sprintf("Benchmark '%s' not supported!",benchName)));
-  elseif strcmp(benchName,'cifar100')
-      % vnncomp2024_cifar100_benchmark ----------------------------------
+      % options.nn.interval_center = true;
+      % options.nn.train.num_init_gens = 5;
+      % options.nn.train.num_approx_err = 0;
+      % options.nn.train.mini_batch_size = 2^5;
+
+      % options.nn.max_verif_iter = 100;
+      % options.nn.verify_dequeue_type = 'front';
+      % options.nn.verify_enqueue_type = 'append';
+  elseif strcmp(benchName,'cersyve')
+      nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC', ...
+          '','dagnetwork',true);
+  elseif strcmp(benchName,'cifar100_2024')
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS', ...
           '','dagnetwork',true);
       % Bring input into the correct shape.
@@ -128,11 +132,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % Save memory (reduce batch size & do not batch union constraints).
       options.nn.train.mini_batch_size = 2^2;
       options.nn.batch_union_conzonotope_bounds = false;
-  elseif strcmp(benchName,'collins_aerospace_benchmark')
-      throw(CORAerror('CORA:notSupported',...
-          sprintf("Benchmark '%s' not supported!",benchName)));
-  elseif strcmp(benchName,'collins_rul_cnn_2023')
-      % collins_rul_cnn -------------------------------------------------
+  elseif strcmp(benchName,'collins_rul_cnn_2022')
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS');
       % Bring input into the correct shape.
       permuteDims = true;
@@ -140,43 +140,38 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.interval_center = true;
       options.nn.train.num_init_gens = inf;
       options.nn.train.num_approx_err = 100;
-  elseif strcmp(benchName,'collins_yolo_robustness_2023')
-      throw(CORAerror('CORA:notSupported',...
-          sprintf("Benchmark '%s' not supported!",benchName)));
-  elseif strcmp(benchName,'cora')
+  elseif strcmp(benchName,'cora_2024')
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
       % Requires less memory.
       % options.nn.falsification_method = 'fgsm';
       % Specify an initial split (num pieces, num dimensions).
       % options.nn.init_split = [2 10];
       % Use the default parameters.
-      options.nn.interval_center = true;
-      options.nn.train.num_init_gens = 500; % inf;
-      options.nn.train.num_approx_err = 100;
+      % options.nn.interval_center = true;
+      % options.nn.train.num_init_gens = 500; % inf;
+      % options.nn.train.num_approx_err = 100;
       % Add relu tightening constraints.
       % options.nn.num_relu_constraints = inf;
       % Reduce batch size.
       options.nn.train.mini_batch_size = 2^5;
       % Specify number of splits, dimensions, and neuron-splits.
-      % options.nn.num_splits = 2; 
-      % options.nn.num_dimensions = 1;
-      % options.nn.num_neuron_splits = 2;
+      options.nn.num_splits = 2; 
+      options.nn.num_dimensions = 1;
+      options.nn.num_neuron_splits = 0;
       % Save memory (do not batch union constraints).
       options.nn.batch_union_conzonotope_bounds = false;
-      % options.nn.neuron_xor_input_splits = false;
   elseif strcmp(benchName,'dist_shift_2023')
       % dist_shift ------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
       % Use default values.
-  elseif strcmp(benchName,'linearizenn')
+  elseif strcmp(benchName,'linearizenn_2024')
       % LinearizeNN -----------------------------------------------------
-      % nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC','BC');
-      % --- TODO: weird networks (MatMul) and concat => No
+      nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC', ...
+          '','dagnetwork',true);
       throw(CORAerror('CORA:notSupported',...
           sprintf("Benchmark '%s' not supported!",benchName)));
-  elseif strcmp(benchName,'lsnc')
-      throw(CORAerror('CORA:notSupported',...
-          sprintf("Benchmark '%s' not supported!",benchName)));
+  elseif strcmp(benchName,'malbeware')
+      nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS');
   elseif strcmp(benchName,'metaroom_2023')
       % metaroom --------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS');
@@ -190,13 +185,9 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.train.mini_batch_size = 2^2;
       % Add relu tightening constraints.
       % options.nn.num_relu_constraints = 100;
-  elseif strcmp(benchName,'ml4acopf_2023')
-      throw(CORAerror('CORA:notSupported',...
-          sprintf("Benchmark '%s' not supported!",benchName)));
-  elseif strcmp(benchName,'ml4acopf_2024')
-      throw(CORAerror('CORA:notSupported',...
-          sprintf("Benchmark '%s' not supported!",benchName)));
-  elseif strcmp(benchName,'nn4sys_2023')
+  elseif strcmp(benchName,'neurocodebench')
+      nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
+  elseif strcmp(benchName,'nn4sys')
       % nn4sys ----------------------------------------------------------
       if ~strcmp(modelName{1},'lindex') && ...
               ~strcmp(modelName{1},'lindex_deep')
@@ -207,7 +198,9 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       end
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC','BC');
       % Use the default parameters.
-  elseif strcmp(benchName,'safenlp')
+  elseif strcmp(benchName,'relusplitter')
+      nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'CSS');
+  elseif strcmp(benchName,'safenlp_2024')
       % safeNLP ---------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
       % Increase batch size.
@@ -218,7 +211,15 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % options.nn.num_neuron_splits = 0;
       % Add relu tightening constraints.
       % options.nn.num_relu_constraints = inf;
-  elseif strcmp(benchName,'tinyimagenet')
+  elseif strcmp(benchName,'soundnessbench')
+      nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
+      % Use interval-center.
+      options.nn.interval_center = true;
+      options.nn.train.num_init_gens = inf;
+      options.nn.train.num_approx_err = 100;
+      % Reduce the batch size.
+      options.nn.train.mini_batch_size = 2^2;
+  elseif strcmp(benchName,'tinyimagenet_2024')
       % tinyimagenet ----------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS', ...
           '','dagnetwork',true);
@@ -243,18 +244,6 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % tllverifybench --------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
       % Use default settings.
-  elseif strcmp(benchName,'traffic_signs_recognition_2023')
-      throw(CORAerror('CORA:notSupported',...
-          sprintf("Benchmark '%s' not supported!",benchName)));
-  elseif strcmp(benchName,'vggnet16_2023')
-      throw(CORAerror('CORA:notSupported',...
-          sprintf("Benchmark '%s' not supported!",benchName)));
-  elseif strcmp(benchName,'vit_2023')
-      throw(CORAerror('CORA:notSupported',...
-          sprintf("Benchmark '%s' not supported!",benchName)));
-  elseif strcmp(benchName,'yolo_2023')
-      throw(CORAerror('CORA:notSupported',...
-          sprintf("Benchmark '%s' not supported!",benchName)));
   else
       throw(CORAerror('CORA:notSupported',...
           sprintf("Unknown benchmark '%s'!",benchName)));
@@ -267,7 +256,7 @@ function aux_printOptions(options)
     table = CORAtableParameters('neuralNetwork/verify options');
     table.printHeader();
     % Zonotope propagation options.
-    table.printContentRow('GPU',options.nn.train.use_gpu);
+    table.printContentRow('GPU',string(options.nn.train.use_gpu));
     table.printContentRow('Poly. Method',options.nn.poly_method);
     table.printContentRow('Batchsize', ...
         string(options.nn.train.mini_batch_size));
