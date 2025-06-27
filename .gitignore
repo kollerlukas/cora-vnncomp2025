@@ -10,8 +10,6 @@ code/cora/.gitignore
 code/cora/app
 code/cora/contDynamics
 code/cora/converter
-# Keep the vnnlib converter.
-!code/cora/converter/neuralnetwork2cora/vnnlib2cora.m
 code/cora/discrDynamics
 code/cora/examples
 code/cora/hybridDynamics
@@ -19,4 +17,3 @@ code/cora/manual
 code/cora/matrixSet
 code/cora/models
 code/cora/nn/rl
-code/cora/unitTests
