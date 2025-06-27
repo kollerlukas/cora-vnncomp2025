@@ -1,5 +1,5 @@
 name: CORA
-ami: ami-094040f6770aae1e3 R2024b matlab_linux
+ami: ami-094040f6770aae1e3
 scripts_dir: .
 manual_installation_step: False
 run_installation_script_as_root: False
