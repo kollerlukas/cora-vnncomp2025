@@ -46,6 +46,16 @@ methods
         obj@nnLayer(varargin{:})
         obj.layers = layers;
         obj.aggregation = aggregation;
+        switch obj.aggregation
+            case 'add'
+                obj.aggregation = aggregation;
+            case 'concat'
+                obj.aggregation = aggregation;
+            otherwise
+                throw(CORAerror('CORA:wrongInputInConstructor', ...
+                    'nnCompositeLayer.aggregation', ...
+                    "Only supported value is 'add' and 'concat'!"));
+        end
 
         % By default the concatenation is along the first dimension.
         obj.concatDim = 1;
@@ -63,17 +73,18 @@ methods
             end
         end
 
-        if strcmp(obj.aggregation,'add')
-            % Same output size as the individual outputs.
-            outputSize = obj.outputSizes{1};
-        elseif strcmp(obj.aggregation,'concat')
-            outputSize = obj.outputSizes{1};
-            outputSize_ = sum(cell2mat(obj.outputSizes),obj.concatDim);
-            outputSize(obj.concatDim) = outputSize_(obj.concatDim);
-        else
-            throw(CORAerror('CORA:wrongFieldValue', ...
-                'nnCompositeLayer.aggregation', ...
-                "Only supported value is 'add'!"));
+        switch obj.aggregation
+            case 'add'
+                % Same output size as the individual outputs.
+                outputSize = obj.outputSizes{1};
+            case 'concat'
+                outputSize = obj.outputSizes{1};
+                outputSize_ = sum(cell2mat(obj.outputSizes),obj.concatDim);
+                outputSize(obj.concatDim) = outputSize_(obj.concatDim);
+            otherwise
+                throw(CORAerror('CORA:wrongFieldValue', ...
+                    'nnCompositeLayer.aggregation', ...
+                    "Only supported value is 'add' and 'concat'!"));
         end
     end
 
@@ -367,7 +378,7 @@ methods
         x1_ = reshape(x1,[imgSize1 bSz_]);
         x2_ = reshape(x2,[imgSize2 bSz_]);
         % Concatenate the images.
-        x_ = cat(obj.concatDim,x2_,x1_);
+        x_ = cat(obj.concatDim,x1_,x2_);
         % Reshape the result.
         x = reshape(x_,[],bSz_);
         % Compute concatenated image size.

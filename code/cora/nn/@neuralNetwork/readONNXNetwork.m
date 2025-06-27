@@ -31,7 +31,7 @@ function obj = readONNXNetwork(file_path, varargin)
 %                30-November-2022 (removed neuralNetworkOld)
 %                13-February-2023 (simplified function)
 %                21-October-2024 (clean up DLT function call)
-%                25-June-2025 (LK: use digraph for parsing composite layers)
+%                25-June-2025 (LK, use digraph for parsing composite layers)
 % Last revision: ---
 
 % ------------------------------ BEGIN CODE -------------------------------
@@ -59,7 +59,7 @@ end
 
 % try to read ONNX network using dltoolbox
 try
-    dltoolbox_net = aux_readONNXviaDLT(file_path,inputDataFormats,outputDataFormats,targetNetwork);
+    dlt_net = aux_readONNXviaDLT(file_path,inputDataFormats,outputDataFormats,targetNetwork);
 
 catch ME
     if strcmp(ME.identifier, 'MATLAB:javachk:thisFeatureNotAvailable') && ...
@@ -71,7 +71,7 @@ catch ME
         aux_removeIndentCodeLines(ME);
 
         % re-read network
-        dltoolbox_net = aux_readONNXviaDLT(file_path,inputDataFormats,outputDataFormats,targetNetwork);
+        dlt_net = aux_readONNXviaDLT(file_path,inputDataFormats,outputDataFormats,targetNetwork);
 
     else
         rethrow(ME)
@@ -81,13 +81,13 @@ end
 if containsCompositeLayers
     % Combine multiple layers into blocks to realize residual connections and
     % parallel computing paths.
-    layers = aux_groupCompositeLayers(dltoolbox_net.Layers,dltoolbox_net.Connections);
+    layers = aux_groupCompositeLayers(dlt_net.Layers,dlt_net.Connections);
 else
-    layers = num2cell(dltoolbox_net.Layers);
+    layers = num2cell(dlt_net.Layers);
 end
 
 % convert DLT network to CORA network
-% obj = neuralNetwork.convertDLToolboxNetwork(dltoolbox_net.Layers, verbose);
+% obj = neuralNetwork.convertDLToolboxNetwork(dlt_net.Layers, verbose);
 obj = neuralNetwork.convertDLToolboxNetwork(layers, verbose);
 
 end
@@ -95,7 +95,7 @@ end
 
 % Auxiliary functions -----------------------------------------------------
 
-function dltoolbox_net = aux_readONNXviaDLT(file_path,inputDataFormats,outputDataFormats,targetNetwork)
+function dlt_net = aux_readONNXviaDLT(file_path,inputDataFormats,outputDataFormats,targetNetwork)
     % read ONNX network via DLT
 
     % build name-value pairs
@@ -124,9 +124,9 @@ function dltoolbox_net = aux_readONNXviaDLT(file_path,inputDataFormats,outputDat
     % load network
     if isMATLABReleaseOlderThan('R2023b')
         % legacy
-        dltoolbox_net = importONNXNetwork(file_path, NVpairs{:}, 'TargetNetwork', targetNetwork);
+        dlt_net = importONNXNetwork(file_path, NVpairs{:}, 'TargetNetwork', targetNetwork);
     else
-        dltoolbox_net = importNetworkFromONNX(file_path, NVpairs{:});
+        dlt_net = importNetworkFromONNX(file_path, NVpairs{:});
     end
 end
 
@@ -162,16 +162,6 @@ end
 function layers = aux_groupCompositeLayers(layerslist, connections)
     % We use a digraph as a utility to convert the table of connections to
     % a nested cell array.
-
-    % Preprocess for digraph conversion.
-    [layernames, conns, dltLayers] = ...
-        nnHelper.buildDigraphIngredientsFromNodesAndConns( ...
-            layerslist, connections);
-    
-    % % Convert to digraph.
-    % G = digraph( ...
-    %     table(cell2mat(conns),'VariableNames', {'EndNodes'}), ...
-    %     table(layernames{1},'VariableNames', {'Names'}));
 
     % Build weights; we encode the order of inputs through weights in the
     % digraph.
@@ -241,7 +231,7 @@ function [layers,ni] = aux_buildNestedCellArray(G,dltLayers,nK)
             % Obtain the weights.
             ws = G.Edges.Weight(edgeIdx)';
             % Sort the predecessors based on the edge weight.
-            [~,predIdx] = sort(ws);
+            [~,predIdx] = sort(ws,'ascend');
 
             % Create a new computation path for each predecessor.
             for j=predIdx
@@ -250,12 +240,12 @@ function [layers,ni] = aux_buildNestedCellArray(G,dltLayers,nK)
                 isResidualConn = length(successors(G,preds(j))) > 1;
                 if isResidualConn
                     % Prepend the empty cell for the j-th computation path.
-                    layersPreds = [{}; layersPreds];
+                    layersPreds = [layersPreds; {{}}];
                 else
                     % Compute the layers of the j-th computation path.
                     [layersj,ni] = aux_buildNestedCellArray(G,dltLayers,preds(j));
                     % Prepend the layers of the j-th computation path.
-                    layersPreds = [{layersj}; layersPreds];
+                    layersPreds = [layersPreds; {layersj}];
                 end
             end
             % Traversed all computation paths; prepend the layers.

@@ -170,9 +170,10 @@ initDims = options.nn.init_split(2);
 if initSplits > 1
     % Compute the sensitivity of the center.
     [S,~] = nn.calcSensitivity(x,options);
-    % The sensitivity should not be lower than 1e-3, otherwise it is too 
+    % The sensitivity should not be lower than 1e-6, otherwise it is too 
     % low to be effective for the (neuron-) splitting heuristic.
-    sens = reshape(max(abs(S),[],1),size(r)); 
+    S_ = max(abs(S),1e-6);
+    sens = reshape(max(S_,[],1),size(r)); 
 
     % Obtain order of the size of the different dimensions.
     [~,dimOrder] = sort(sens.*r,1,'descend');
@@ -264,7 +265,8 @@ while size(xs,2) > 0
     [S,~] = nn.calcSensitivity(xi,options,storeSensitivity);
     % The sensitivity should not be lower than 1e-3, otherwise it is too 
     % low to be effective for the (neuron-) splitting heuristic.
-    sens = reshape(max(abs(S),[],1),[n0 cbSz]); 
+    S_ = max(abs(S),1e-6);
+    sens = reshape(max(S_,[],1),[n0 cbSz]); 
 
     % TODO: investigate a more efficient implementation of the sensitivity
     % computation using backpropagation.
@@ -1581,7 +1583,8 @@ function [As,bs,nrIdx] = aux_neuronConstraints(nn,options, ...
         ui = cu + ri;
     
         % Obtain the sensitivity for heuristic.
-        sens = reshape(max(abs(layeri.sensitivity),[],1),[nk bSz]);
+        Si_ = max(abs(layeri.sensitivity),1e-6);
+        sens = reshape(max(Si_,[],1),[nk bSz]);
 
         switch heuristic
             case 'least-unstable'
@@ -1684,8 +1687,8 @@ function [As,bs,nrIdx] = aux_neuronConstraints(nn,options, ...
 
         % Extract the most important input dimension; make the constraint
         % orthogonal w.r.t. that dimension constraints.
-        As_ = As(:,1:numInitGens,:);
-        [~,dimIds] = max(abs(As_),[],2);
+        As_ = max(abs(As(:,1:numInitGens,:)),1e-6);
+        [~,dimIds] = max(As_,[],2);
 
         % 1. Generate unit vector along most important dimension.
         v = zeros([p numInitGens bSz],'like',As_);
@@ -1754,6 +1757,8 @@ function [At,bt] = aux_reluTightenConstraints(nn,options,idxLayer, ...
     btd = [];
     % Initial heuristics.
     h = [];
+    % Initialize indices of neuron split.
+    nrIdx = struct('layerIdx',[],'dimIdx',[]);
     
     % Enumerate the layers of the neural networks.
     [layers,~,~,succIdx] = nn.enumerateLayers();
@@ -1810,7 +1815,8 @@ function [At,bt] = aux_reluTightenConstraints(nn,options,idxLayer, ...
         ui = ciu + ri;
 
         % Obtain the sensitivity for heuristic.
-        sens = reshape(max(abs(layeri.sensitivity),[],1),nk,[]);
+        Si_ = max(abs(layeri.sensitivity),1e-6);
+        sens = reshape(max(Si_,[],1),nk,[]);
         if size(sens,2) < bSz
             % Duplicate the sensitivity (there was neuron splitting involved).
             newSplits = bSz/size(Si,3);
@@ -1885,21 +1891,43 @@ function [At,bt] = aux_reluTightenConstraints(nn,options,idxLayer, ...
         btd = reshape(btd(cIdx),[numConstr_ bSz]);
         % Update number of constraints.
         p = size(At0,2);
+
+        % Update indices.
+        nrIdx.layerIdx = [nrIdx.layerIdx; repelem(i,nk,bSz)];
+        nrIdx.layerIdx = reshape(nrIdx.layerIdx(idx(1:numConstr_,:)),...
+            [numConstr_ bSz]);
+        nrIdx.dimIdx = [nrIdx.dimIdx; repmat((1:nk)',1,bSz)];
+        nrIdx.dimIdx = reshape(nrIdx.dimIdx(idx(1:numConstr_,:)),...
+            [numConstr_ bSz]);
     end
     % Transpose constraint matrix.
     At = permute(cat(2,At0,Atd),[2 1 3]);
     bt = [bt0; btd];
+    nrIdx.layerIdx = repmat(nrIdx.layerIdx,2,1);
+    nrIdx.dimIdx = repmat(nrIdx.dimIdx,2,1);
 
     if size(At,3) < size(bc,2)
         % Duplicate the constraints (there was neuron splitting involved).
         newSplits = size(bc,2)/size(At,3);
         At = repmat(At,1,1,newSplits);
         bt = repmat(bt,1,newSplits);
+        nrIdx.layerIdx = repmat(nrIdx.layerIdx,1,newSplits);
+        nrIdx.dimIdx = repmat(nrIdx.dimIdx,1,newSplits);
     end
 
-    if scaleInputSets && ~isempty(At)
+    % Identify which constraints we have to scale.
+    scaleIdx = scaleInputSets(nrIdx.layerIdx);
+    if any(scaleIdx,'all') && ~isempty(At)
         % Scale and offset the constraints with the current hypercube.
-        [bt,At] = aux_scaleAndOffsetZonotope(bt,At,-bc,br);
+        [bt_scl,At_scl] = aux_scaleAndOffsetZonotope(bt,At,-bc,br);
+        % Permute the constraints for logical indexing.
+        At_ = permute(At,[2 1 3]);
+        At_scl = permute(At_scl,[2 1 3]);
+        % Replace the scaled constraints.
+        At_(:,scaleIdx) = At_scl(:,scaleIdx);
+        bt(scaleIdx) = bt_scl(scaleIdx);
+        % Permute the constraints to correct dimensions.
+        At = permute(At_,[2 1 3]);
     end
 end
 

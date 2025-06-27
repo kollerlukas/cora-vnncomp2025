@@ -60,6 +60,11 @@ function [layersEnum,ancIdx,predIdx,succIdx] = ...
             for j=1:length(layeri.layers)
                 % Obtain the top-level layers of the j-th computation path.
                 layersij = layeri.layers{j};
+                if isempty(layersij)
+                    % This is a residual connection. There are now layers
+                    % here.
+                    continue;
+                end
                 % All layers in this computation path have the same
                 % ancestor.
                 ancIdxIdij = repelem(i,1,length(layersij));

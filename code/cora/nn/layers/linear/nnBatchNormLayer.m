@@ -304,17 +304,19 @@ methods  (Access = {?nnLayer, ?neuralNetwork})
     function [gc, gG] = backpropZonotopeBatch(obj, c, G, gc, gG, options, updateWeights)
         % Obtain batch size.
         [~,~,bs] = size(G);
+        % Obtain the indices of the relevant generators.
+        genIds = obj.backprop.store.genIds;
 
         % Obtain the stored batch-normed input.
         c_normed = obj.backprop.store.c_normed;
-        G_normed = obj.backprop.store.G_normed;
+        G_normed = obj.backprop.store.G_normed(:,genIds,:);
         % Compute Hadamard product between gradient and input.
         if options.nn.interval_center
             gradc_ = reshape(sum(gc.*c_normed,2),size(c,[1 3]));
         else
             gradc_ = gc.*c_normed;
         end
-        gradG_ = reshape(sum(gG.*G_normed,2),size(c,[1 3]));
+        gradG_ = reshape(sum(gG(:,genIds,:).*G_normed,2),size(c,[1 3]));
 
         if updateWeights
             % Obtain input size and normalization dimensions.
