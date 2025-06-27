@@ -1,3 +1,22 @@
+# Do not store the matlab auto-save files.
 *.asv
 
-data/vnncomp2024_benchmarks
+# Only keep relevent cora-code.
+code/cora/.git
+code/cora/.github
+code/cora/.gitattributes
+code/cora/.gitignore
+
+code/cora/app
+code/cora/contDynamics
+code/cora/converter
+# Keep the vnnlib converter.
+!code/cora/converter/neuralnetwork2cora/vnnlib2cora.m
+code/cora/discrDynamics
+code/cora/examples
+code/cora/hybridDynamics
+code/cora/manual
+code/cora/matrixSet
+code/cora/models
+code/cora/nn/rl
+code/cora/unitTests
