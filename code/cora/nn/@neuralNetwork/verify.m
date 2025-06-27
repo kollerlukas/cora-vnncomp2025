@@ -30,12 +30,9 @@ function [res, x_, y_] = verify(nn, x, r, A, b, safeSet, varargin)
 %
 % See also: -
 
-% Authors:       Niklas Kochdumper, Tobias Ladner, Lukas Koller
+% Authors:       Lukas Koller
 % Written:       23-November-2021
-% Last update:   30-November-2022 (TL, removed neuralNetworkOld, adaptive)
-%                25-July-2023 (TL, input parsing, improvements)
-%                23-November-2023 (TL, verbose, bug fix)
-%                14-June-2024 (LK, rewritten with efficient splitting)
+% Last update:   14-June-2024 (LK, rewritten with efficient splitting)
 %                20-January-2025 (LK, constraint zonotope splitting)
 % Last revision: ---
 
@@ -175,8 +172,7 @@ if initSplits > 1
     [S,~] = nn.calcSensitivity(x,options);
     % The sensitivity should not be lower than 1e-3, otherwise it is too 
     % low to be effective for the (neuron-) splitting heuristic.
-    S = max(abs(S),1e-8);
-    sens = reshape(sum(S,1),size(r)); 
+    sens = reshape(max(abs(S),[],1),size(r)); 
 
     % Obtain order of the size of the different dimensions.
     [~,dimOrder] = sort(sens.*r,1,'descend');
@@ -206,10 +202,25 @@ if initSplits > 1
     rs = rs(:,idx);
 end
 
+% Specify the heuristics (TODO: make this an argument).
+% Input-Split Options: 
+%  {'most-sensitive-input-radius',
+%   'ival-norm-gradient'}.
+inputSplitHeuristic = 'most-sensitive-input-radius';
+
+% Neuron-Split Options: 
+%  {'least-unstable', 
+%   'most-sensitive-approx-error',
+%   'most-sensitive-input-radius',
+%   'ival-norm-gradient'}.
+neuronSplitHeuristic = 'ival-norm-gradient';
+
 % The inputs are needed for the neuron splitting, relu tightening 
 % constraints, or layerwise refinement.
-storeInputs = true; % nNeur > 0 || options.nn.num_relu_constraints > 0 ...
-    % || strcmp(options.nn.refinement_method,'zonotack-layerwise');
+storeInputs = nNeur > 0 || options.nn.num_relu_constraints > 0 ...
+     || strcmp(options.nn.refinement_method,'zonotack-layerwise') ...
+     || strcmp(inputSplitHeuristic,'ival-norm-gradient') ...
+     || strcmp(neuronSplitHeuristic,'ival-norm-gradient');
 % The sensitivity is used for selecting input generators, neuron
 % -splitting, and FGSM attacks.
 storeSensitivity =  (nNeur > 0) || options.nn.num_relu_constraints > 0 ...
@@ -253,8 +264,7 @@ while size(xs,2) > 0
     [S,~] = nn.calcSensitivity(xi,options,storeSensitivity);
     % The sensitivity should not be lower than 1e-3, otherwise it is too 
     % low to be effective for the (neuron-) splitting heuristic.
-    S = max(abs(S),1e-8);
-    sens = reshape(sum(S,1),[n0 cbSz]); 
+    sens = reshape(max(abs(S),[],1),[n0 cbSz]); 
 
     % TODO: investigate a more efficient implementation of the sensitivity
     % computation using backpropagation.
@@ -458,28 +468,17 @@ while size(xs,2) > 0
 
             % Initialize number of splitted sets.
             newSplits = 1;
-
-            % Specify the heuristic (TODO: make this an argument).
-            % Options: {'least-unstable', 
-            %   'most-sensitive-approx-error',
-            %   'most-sensitive-input-radius',
-            %   'ival-norm-gradient'}.
-            heuristics = {'least-unstable', ...
-              'most-sensitive-approx-error', ...
-              'most-sensitive-input-radius', ...
-              'ival-norm-gradient'};
-            % heurIdx = randi(4);
-            neuronSplitHeuristic = 'ival-norm-gradient';
     
-            % Store the gradients of the approximation errors.
-            options.nn.store_approx_error_gradients = ...
-                strcmp(neuronSplitHeuristic,'ival-norm-gradient');
-            % Compute gradient of the interval norm of the output set; the
-            % gradient is used to split the neuron in the network as well
-            % as input dimensions.
-            [~,ivalGrad] = nn.backpropZonotopeBatch( ...
-                zeros(size(yi),'like',yi),sign(Gyi),options, ...
-                    idxLayer,false);
+            if strcmp(neuronSplitHeuristic,'ival-norm-gradient')
+                % Store the gradients of the approximation errors.
+                options.nn.store_approx_error_gradients = true;
+                % Compute gradient of the interval norm of the output set; the
+                % gradient is used to split the neuron in the network as well
+                % as input dimensions.
+                [~,ivalGrad] = nn.backpropZonotopeBatch( ...
+                    zeros(size(yi),'like',yi),sign(Gyi),options, ...
+                        idxLayer,false);
+            end
 
             if nNeur > 0 && nSplits > 1
                 % Create split constraints for neurons within the network.
@@ -507,18 +506,21 @@ while size(xs,2) > 0
                     inputDimIdx,repelem(1:cbSz,numInitGens,1)), ...
                         [numInitGens cbSz]);
 
-                % Compute heuristic.
-                % hi = sens(permIdx).*ri(permIdx);
-
-                % Compute indices for the gradient of the interval 
-                % norm w.r.t. the different generators.
-                dimGenIdx = reshape(sub2ind(size(ivalGrad), ...
-                    inputDimIdx, ...
-                    repmat((1:numInitGens)',1,cbSz), ...
-                    repelem(1:cbSz,numInitGens,1)),[numInitGens cbSz]);
-                % Compute gradient of the interval norm.
-                hi = reshape(ivalGrad(dimGenIdx),[numInitGens cbSz]) ...
-                    .*ri(permIdx);
+                switch inputSplitHeuristic
+                    case 'most-sensitive-input-radius'
+                        % Compute the heuristic.
+                        hi = sens(permIdx).*ri(permIdx);
+                    case 'ival-norm-gradient'
+                        % Compute indices for the gradient of the interval 
+                        % norm w.r.t. the different generators.
+                        dimGenIdx = reshape(sub2ind(size(ivalGrad), ...
+                            inputDimIdx, ...
+                            repmat((1:numInitGens)',1,cbSz), ...
+                            repelem(1:cbSz,numInitGens,1)),[numInitGens cbSz]);
+                        % Compute gradient of the interval norm.
+                        hi = reshape(ivalGrad(dimGenIdx),[numInitGens cbSz]) ...
+                            .*ri(permIdx);
+                end
 
                 % Compute input-split constraints.
                 [Ai,bi] = aux_dimSplitConstraints(hi(:,:),nSplits,nDims);
@@ -1131,8 +1133,7 @@ function [l,u,wasRefined,x,Gx,y,Gy] = aux_refineInputSet(nn,options, ...
         if options.nn.num_relu_constraints > 0
             % Compute tightening constraints for unstable ReLU neurons.
             [At,bt] = aux_reluTightenConstraints(nn,options, ...
-                i:length(nn.layers),reluConstrHeuristic, ...
-                    bc,br,scaleInputSets);
+                [],reluConstrHeuristic,bc,br,scaleInputSets);
         else
             % There are no relu constraints; 
             At = [];
@@ -1580,8 +1581,7 @@ function [As,bs,nrIdx] = aux_neuronConstraints(nn,options, ...
         ui = cu + ri;
     
         % Obtain the sensitivity for heuristic.
-        Si = max(abs(layeri.sensitivity),1e-8);
-        sens = reshape(sum(Si,1),[nk bSz]);
+        sens = reshape(max(abs(layeri.sensitivity),[],1),[nk bSz]);
 
         switch heuristic
             case 'least-unstable'
@@ -1810,13 +1810,12 @@ function [At,bt] = aux_reluTightenConstraints(nn,options,idxLayer, ...
         ui = ciu + ri;
 
         % Obtain the sensitivity for heuristic.
-        Si = max(abs(layeri.sensitivity),1e-8);
-        if size(Si,3) < bSz
+        sens = reshape(max(abs(layeri.sensitivity),[],1),nk,[]);
+        if size(sens,2) < bSz
             % Duplicate the sensitivity (there was neuron splitting involved).
             newSplits = bSz/size(Si,3);
-            Si = repmat(Si,1,1,newSplits);
+            sens = repmat(sens,1,newSplits);
         end
-        sens = reshape(sum(Si,1),[nk bSz]);
 
         if q < qi
             % Pad constraints with zeros.
@@ -1898,7 +1897,7 @@ function [At,bt] = aux_reluTightenConstraints(nn,options,idxLayer, ...
         bt = repmat(bt,1,newSplits);
     end
 
-    if scaleInputSets
+    if scaleInputSets && ~isempty(At)
         % Scale and offset the constraints with the current hypercube.
         [bt,At] = aux_scaleAndOffsetZonotope(bt,At,-bc,br);
     end

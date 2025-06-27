@@ -258,10 +258,11 @@ function [layers,inputSize,currentSize] = aux_convertLayer(layers,dlt_layer,curr
         inputSize = [];
         return
 
-        % Custom Layers -----------------------------------------------
+    % Custom Layers -----------------------------------------------
 
     elseif contains(lower(class(dlt_layer)), 'flatten') || ...
-            contains(lower(class(dlt_layer)), 'reshape')
+            contains(lower(class(dlt_layer)), 'reshape') || ...
+            contains(lower(class(dlt_layer)), 'slice')
         % flatten
         
         idx = dlarray(1:prod(currentSize));

@@ -25,12 +25,13 @@ function obj = readONNXNetwork(file_path, varargin)
 %
 % See also: -
 
-% Authors:       Tobias Ladner
+% Authors:       Tobias Ladner, Lukas Koller
 % Written:       30-March-2022
 % Last update:   07-June-2022 (specify in- & outputDataFormats)
 %                30-November-2022 (removed neuralNetworkOld)
 %                13-February-2023 (simplified function)
 %                21-October-2024 (clean up DLT function call)
+%                25-June-2025 (LK: use digraph for parsing composite layers)
 % Last revision: ---
 
 % ------------------------------ BEGIN CODE -------------------------------
@@ -88,7 +89,6 @@ end
 % convert DLT network to CORA network
 % obj = neuralNetwork.convertDLToolboxNetwork(dltoolbox_net.Layers, verbose);
 obj = neuralNetwork.convertDLToolboxNetwork(layers, verbose);
-
 
 end
 
@@ -167,14 +167,34 @@ function layers = aux_groupCompositeLayers(layerslist, connections)
     [layernames, conns, dltLayers] = ...
         nnHelper.buildDigraphIngredientsFromNodesAndConns( ...
             layerslist, connections);
+    
+    % % Convert to digraph.
+    % G = digraph( ...
+    %     table(cell2mat(conns),'VariableNames', {'EndNodes'}), ...
+    %     table(layernames{1},'VariableNames', {'Names'}));
+
+    % Build weights; we encode the order of inputs through weights in the
+    % digraph.
+    ts = regexp(connections.Destination, '/in(\d+)', 'tokens');
+    weights = ones(length(ts), 1);
+    % Logical index for non-empty tokens
+    nonEmptyIdx = ~cellfun(@isempty, ts);
+    weights(nonEmptyIdx) = cellfun(@(x) str2double(x{1}{1}), ts(nonEmptyIdx));
+
+    % Strip the names. 
+    srcs = connections.Source;
+    dests = cellfun(@(dest) cell2mat(dest), ...
+        regexp(connections.Destination,'^[^/]+','match'), ...
+            'UniformOutput',false);
+
     % Convert to digraph.
-    G = digraph( ...
-        table(cell2mat(conns),'VariableNames', {'EndNodes'}), ...
-        table(layernames{1},'VariableNames', {'Names'}));
+    nodesTable = table({layerslist.Name}','VariableNames', {'Name'});
+    G = digraph(srcs,dests,weights,nodesTable);
+        
     % Sort the nodes topologically.
     N = toposort(G);
     % Use a reverse depth-first traversal to construct a nested cell array.
-    layers = aux_buildNestedCellArray(G,dltLayers,N(end));
+    layers = aux_buildNestedCellArray(G,num2cell(layerslist),N(end));
 end
 
 function [layers,ni] = aux_buildNestedCellArray(G,dltLayers,nK)
@@ -215,8 +235,16 @@ function [layers,ni] = aux_buildNestedCellArray(G,dltLayers,nK)
             % node. We have to construct the layer cell arrays for each
             % computation path.
             layersPreds = {};
+
+            % Find the weight of the edges to the predecessors.
+            edgeIdx = findedge(G,preds,ni);
+            % Obtain the weights.
+            ws = G.Edges.Weight(edgeIdx)';
+            % Sort the predecessors based on the edge weight.
+            [~,predIdx] = sort(ws);
+
             % Create a new computation path for each predecessor.
-            for j=1:length(preds)
+            for j=predIdx
                 % Check if the computation path is just a resiudal
                 % connection.
                 isResidualConn = length(successors(G,preds(j))) > 1;

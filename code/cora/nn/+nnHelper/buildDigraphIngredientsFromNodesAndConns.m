@@ -1,5 +1,3 @@
-
-
 function [layernames, conns, layerobjectcell] = buildDigraphIngredientsFromNodesAndConns(networkLayers, networkConnections)
 % buildDigraphIngredientsFromNodesAndConns - returns a preprocessing of ingredients in order to create a CORA NN digraph object
 %                                            The inputs are the NodeTable and EdgeTable of the matlab digraph object (see https://www.mathworks.com/help/matlab/ref/digraph.html#mw_6ee207c1-b4f0-4f84-957e-d6d4816748d6)
@@ -82,3 +80,4 @@ function [layernames, conns, layerobjectcell] = buildDigraphIngredientsFromNodes
     
     layernames = {table2cell(newlayers)};
     conns = {[newconns_a' , newconns_b']};
+end

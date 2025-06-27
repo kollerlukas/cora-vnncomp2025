@@ -70,7 +70,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   % Specify number of splits, dimensions, and neuron-splits.
   options.nn.num_splits = 2; 
   options.nn.num_dimensions = 1;
-  options.nn.num_neuron_splits = 0;
+  options.nn.num_neuron_splits = 1;
   % Add relu tightening constraints.
   options.nn.num_relu_constraints = 0;
   options.nn.add_orth_neuron_splits = true;
