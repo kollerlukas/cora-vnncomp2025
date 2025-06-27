@@ -9,7 +9,13 @@ code/cora/.gitignore
 
 code/cora/app
 code/cora/contDynamics
-code/cora/converter
+
+code/cora/converter/commonocean2cora
+code/cora/converter/commonroad2cora
+code/cora/converter/cora2spaceex
+code/cora/converter/powerSystem2cora
+code/cora/converter/spaceex2cora
+
 code/cora/discrDynamics
 code/cora/examples
 code/cora/hybridDynamics
