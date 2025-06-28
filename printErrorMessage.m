@@ -11,7 +11,9 @@ function printErrorMessage(e)
        [funcname,classname,linenr] = extractStackInfo(e.stack(i));
        % Print the error message. 
        fprintf(' --- %s/%s [%d]\n',classname,funcname,linenr);
-    end
+    end 
+    fprintf(newline);
+    
 end
 
 % Auxiliary functions -----------------------------------------------------

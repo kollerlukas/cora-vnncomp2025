@@ -68,7 +68,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   % Specify number of splits, dimensions, and neuron-splits.
   options.nn.num_splits = 2; 
   options.nn.num_dimensions = 1;
-  options.nn.num_neuron_splits = 1;
+  options.nn.num_neuron_splits = 0;
   % Add relu tightening constraints.
   options.nn.num_relu_constraints = 0;
   options.nn.add_orth_neuron_splits = true;
@@ -88,7 +88,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'','', ...
           'dlnetwork',false);
       % Use the default parameters.
-  elseif strcmp(benchName,'acas_xu')
+  elseif strcmp(benchName,'acasxu_2023')
       % acasxu ----------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BSSC');
       % Specify an initial split (num pieces, num dimensions).
@@ -110,6 +110,10 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   elseif strcmp(benchName,'cersyve')
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC', ...
           '','dagnetwork',true);
+      % Specify number of splits, dimensions, and neuron-splits.
+      options.nn.num_splits = 2; 
+      options.nn.num_dimensions = 1;
+      options.nn.num_neuron_splits = 0;
   elseif strcmp(benchName,'cifar100_2024')
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS', ...
           '','dagnetwork',true);
@@ -166,6 +170,10 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % LinearizeNN -----------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC', ...
           '','dagnetwork',true);
+      % Specify number of splits, dimensions, and neuron-splits.
+      options.nn.num_splits = 2; 
+      options.nn.num_dimensions = 1;
+      options.nn.num_neuron_splits = 1;
   elseif strcmp(benchName,'malbeware')
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS');
   elseif strcmp(benchName,'metaroom_2023')
@@ -181,8 +189,6 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.train.mini_batch_size = 2^2;
       % Add relu tightening constraints.
       % options.nn.num_relu_constraints = 100;
-  elseif strcmp(benchName,'neurocodebench')
-      nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
   elseif strcmp(benchName,'nn4sys')
       % nn4sys ----------------------------------------------------------
       if ~strcmp(modelName{1},'lindex') && ...
@@ -207,6 +213,8 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % options.nn.num_neuron_splits = 0;
       % Add relu tightening constraints.
       % options.nn.num_relu_constraints = inf;
+  elseif strcmp(benchName,'sat_relu')
+      nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
   elseif strcmp(benchName,'soundnessbench')
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
       % Use interval-center.
