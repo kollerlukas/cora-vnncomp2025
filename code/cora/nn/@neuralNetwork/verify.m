@@ -207,7 +207,7 @@ end
 % Input-Split Options: 
 %  {'most-sensitive-input-radius',
 %   'ival-norm-gradient'}.
-inputSplitHeuristic = 'most-sensitive-input-radius';
+inputSplitHeuristic = 'ival-norm-gradient';
 
 % Neuron-Split Options: 
 %  {'least-unstable', 
@@ -1044,14 +1044,15 @@ function [l,u,wasRefined,x,Gx,y,Gy] = aux_refineInputSet(nn,options, ...
     % Extract type of refinement.
     layerwise = strcmp(options.nn.refinement_method,'zonotack-layerwise');
 
+    % Enumerate the layers of the neural networks.
+    [layers,ancIdx] = nn.enumerateLayers();
+
     if layerwise
         % TODO: we cannot refine through composite layer, because we loose
         % dependencies between the computation paths. We recompute
         % the output from the refined layer; we cannot recompute from the
         % input set, there we need to compensate for the approximation
         % errors.
-        % Enumerate the layers of the neural networks.
-        [layers,ancIdx] = nn.enumerateLayers();
 
         % We can only refine the top-level computation path (there are no
         % parallel paths).
@@ -1067,9 +1068,7 @@ function [l,u,wasRefined,x,Gx,y,Gy] = aux_refineInputSet(nn,options, ...
         refIdxLayer = [fliplr(refIdxLayer) 1];
     else       
         % We only refine the input.
-        layers = {nn.layers{1}};
         refIdxLayer = 1;
-        ancIdx = 1;
     end
 
     % Obtain number of generators and batchsize.
@@ -1764,7 +1763,7 @@ function [At,bt] = aux_reluTightenConstraints(nn,options,idxLayer, ...
     [layers,~,~,succIdx] = nn.enumerateLayers();
 
     if isempty(scaleInputSets)
-        scaleInputSets = ones([1 length(layers)],'logical');
+        scaleInputSets = zeros([1 length(layers)],'logical');
     end
 
     if isempty(idxLayer)
