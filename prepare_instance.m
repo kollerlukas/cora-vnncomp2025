@@ -26,9 +26,7 @@ function res = prepare_instance(benchName,modelPath,vnnlibPath)
       aux_printOptions(options);
   catch e
       % Print the error message. 
-      fprintf(newline);
-      fprintf(e.message);
-      fprintf(newline);
+      printErrorMessage(e)
       % Some error
       res = 1;
       return;

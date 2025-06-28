@@ -92,35 +92,8 @@ function [resStr,res] = run_instance(benchName,modelPath,vnnlibPath, ...
                         fprintf('--- OOM error: half batchSize %d...\n', ...
                             options.nn.train.mini_batch_size);
                     else
-                        % Get the function name.
-                        funcname = e.stack(1).name;
-                        % Get the classname.
-                        [dir,filename,~] = fileparts(e.stack(1).file);
-                        if contains(dir,'@')
-                            % The function is contained in a separate file.
-                            [~,classname_] = fileparts(dir);
-                            % Remove the '@'.
-                            classname_(1) = [];
-                            % Handle sub-functions.
-                            if ~strcmp(filename,funcname)
-                                % The error occurred in a sub-function.
-                                funcname = [filename '/' funcname];
-                            end
-                            % Set the classname to the name of the parent 
-                            % directory.
-                            classname = classname_;
-                        else
-                            % The class name is the filename.
-                            classname = filename;
-                        end
-                        % Get the line number.
-                        linenr = e.stack(1).line;
-                        % Print the error message. 
-                        fprintf(newline);
-                        fprintf( ...
-                            'Unexpected Error! \n --- %s/%s [%d]: %s\n', ...
-                            classname,funcname,linenr,e.message);
-                        fprintf(newline);
+                        % Print the error message.
+                        printErrorMessage(e);
                         break;
                     end
                 end
@@ -175,7 +148,8 @@ function [resStr,res] = run_instance(benchName,modelPath,vnnlibPath, ...
         
 
     catch e
-        fprintf(e.message);
+        % Print the error message.
+        printErrorMessage(e);
         % There is some issue with the parsing; e.g. acasxu prop_6.vnnlib
         resStr = 'unknown';
         fprintf(' done\n');
