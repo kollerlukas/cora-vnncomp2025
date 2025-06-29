@@ -88,11 +88,11 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'','', ...
           'dlnetwork',false);
       % Use the default parameters.
-  elseif strcmp(benchName,'acasxu_2023')
+  elseif strcmp(benchName,'acasxu_2023') || strcmp(benchName,'acas_xu')
       % acasxu ----------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BSSC');
       % Specify an initial split (num pieces, num dimensions).
-      % options.nn.init_split = [25 2];
+      % options.nn.init_split = [10 5];
       % Specify number of splits, dimensions, and neuron-splits.
       options.nn.num_splits = 2; 
       options.nn.num_dimensions = 1;
@@ -132,7 +132,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % options.nn.num_dimensions = 1;
       % options.nn.num_neuron_splits = 3;
       % Save memory (reduce batch size & do not batch union constraints).
-      options.nn.train.mini_batch_size = 2^2;
+      % options.nn.train.mini_batch_size = 2^2;
       options.nn.batch_union_conzonotope_bounds = false;
   elseif strcmp(benchName,'collins_rul_cnn_2022')
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS');
@@ -155,7 +155,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % Add relu tightening constraints.
       % options.nn.num_relu_constraints = inf;
       % Reduce batch size.
-      options.nn.train.mini_batch_size = 2^5;
+      % options.nn.train.mini_batch_size = 2^5;
       % Specify number of splits, dimensions, and neuron-splits.
       options.nn.num_splits = 2; 
       options.nn.num_dimensions = 1;
@@ -176,6 +176,8 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.num_neuron_splits = 1;
   elseif strcmp(benchName,'malbeware')
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS');
+      % Bring input into the correct shape.
+      permuteDims = true;
   elseif strcmp(benchName,'metaroom_2023')
       % metaroom --------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS');
@@ -186,7 +188,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.train.num_init_gens = 500;
       options.nn.train.num_approx_err = 100;
       % Reduce the batch size.
-      options.nn.train.mini_batch_size = 2^2;
+      % options.nn.train.mini_batch_size = 2^2;
       % Add relu tightening constraints.
       % options.nn.num_relu_constraints = 100;
   elseif strcmp(benchName,'nn4sys')
@@ -205,14 +207,6 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
   elseif strcmp(benchName,'safenlp_2024')
       % safeNLP ---------------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
-      % Increase batch size.
-      options.nn.train.mini_batch_size = 2^9;
-      % Specify number of splits, dimensions, and neuron-splits.
-      % options.nn.num_splits = 2; 
-      % options.nn.num_dimensions = 1;
-      % options.nn.num_neuron_splits = 0;
-      % Add relu tightening constraints.
-      % options.nn.num_relu_constraints = inf;
   elseif strcmp(benchName,'sat_relu')
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC');
   elseif strcmp(benchName,'soundnessbench')

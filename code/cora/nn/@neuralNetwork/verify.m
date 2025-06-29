@@ -471,7 +471,8 @@ while size(xs,2) > 0
             % Initialize number of splitted sets.
             newSplits = 1;
     
-            if strcmp(neuronSplitHeuristic,'ival-norm-gradient')
+            if strcmp(inputSplitHeuristic,'ival-norm-gradient') ...
+                || strcmp(neuronSplitHeuristic,'ival-norm-gradient')
                 % Store the gradients of the approximation errors.
                 options.nn.store_approx_error_gradients = true;
                 % Compute gradient of the interval norm of the output set; the
