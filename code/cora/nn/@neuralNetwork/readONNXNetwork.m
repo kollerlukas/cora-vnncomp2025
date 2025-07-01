@@ -172,7 +172,9 @@ function layers = aux_groupCompositeLayers(layerslist, connections)
     weights(nonEmptyIdx) = cellfun(@(x) str2double(x{1}{1}), ts(nonEmptyIdx));
 
     % Strip the names. 
-    srcs = connections.Source;
+    srcs = cellfun(@(src) cell2mat(src), ...
+        regexp(connections.Source,'^[^/]+','match'), ...
+            'UniformOutput',false);
     dests = cellfun(@(dest) cell2mat(dest), ...
         regexp(connections.Destination,'^[^/]+','match'), ...
             'UniformOutput',false);
@@ -181,13 +183,23 @@ function layers = aux_groupCompositeLayers(layerslist, connections)
     nodesTable = table({layerslist.Name}','VariableNames', {'Name'});
     G = digraph(srcs,dests,weights,nodesTable);
         
-    % Sort the nodes topologically.
+    % Sort the nodes topologically to find the final node.
     N = toposort(G);
+    % Find the final node.
+    nK = N(end);
+
+    % % Visualization for debugging.
+    % figure; 
+    % plot(G,'EdgeLabel', G.Edges.Weight, ...
+    %     'NodeLabel', cellfun(@(name) findnode(G,name),G.Nodes.Name));
+
     % Use a reverse depth-first traversal to construct a nested cell array.
-    layers = aux_buildNestedCellArray(G,num2cell(layerslist),N(end));
+    [layers,~] = aux_buildNestedCellArray(num2cell(layerslist), ...
+        G,nK,[]);
 end
 
-function [layers,ni] = aux_buildNestedCellArray(G,dltLayers,nK)
+function [layers,G,ni,nSucc] = aux_buildNestedCellArray(dltLayers,G, ...
+    nK,nSucc)
     % We use a reverse depth-first traversal to construct a nested cell
     % array. We have to reverse the traversal to avoid not creating nested 
     % cells. 
@@ -202,10 +214,26 @@ function [layers,ni] = aux_buildNestedCellArray(G,dltLayers,nK)
     while iter < height(G.Nodes)
         % Obtain the successors.
         succs = successors(G,ni);
-        if length(succs) > 1 && ni ~= nK
-            % We reached a forking node; we break out of the current
-            % computation path.
-            break;
+
+        if length(succs) > 1 
+            % We reached a forking node. 
+            if ~isempty(setdiff(succs,nSucc))
+                % There are still outgoing computation paths that have 
+                % not been visited. We break out of the current 
+                % computation path.
+                break;
+            end
+        end
+
+        if ~isempty(nSucc)
+            % Find the index of the current edge (ni,nSucc).
+            edgeIdx = findedge(G,ni,nSucc);
+            % Mark the edge as visited by setting the weight to 0.
+            G.Edges.Weight(edgeIdx) = 0;
+            
+            % Visualization for debugging.
+            % plot(G,'EdgeLabel', G.Edges.Weight, ...
+            %     'NodeLabel', cellfun(@(name) findnode(G,name),G.Nodes.Name));
         end
 
         % Prepend the current layer.
@@ -217,42 +245,60 @@ function [layers,ni] = aux_buildNestedCellArray(G,dltLayers,nK)
         if isempty(preds)
             % There are no predecessors; we have reached the input node.
             break;
-        elseif length(preds) <= 1
-            % Move to the only predecessor.
-            ni = preds(1);
-        else % if length(preds) > 1
+        end
+
+        % Find the indices of the edges to all predecessors.
+        edgeIdx = findedge(G,preds,ni);
+
+        if length(preds) > 1
             % There are multiple computation paths merging in the current
             % node. We have to construct the layer cell arrays for each
             % computation path.
             layersPreds = {};
 
-            % Find the weight of the edges to the predecessors.
-            edgeIdx = findedge(G,preds,ni);
-            % Obtain the weights.
+            % Find the weight of the edges, which encode the order 
+            % (required for concatenation).
             ws = G.Edges.Weight(edgeIdx)';
             % Sort the predecessors based on the edge weight.
             [~,predIdx] = sort(ws,'ascend');
 
+            % Store final nodes of each computation path.
+            nSucc = [];
+
             % Create a new computation path for each predecessor.
             for j=predIdx
-                % Check if the computation path is just a resiudal
+                % Mark the edge as visited by setting the weight to 0.
+                G.Edges.Weight(edgeIdx(j)) = 0;
+                % Check if the computation path is just a residual
                 % connection.
                 isResidualConn = length(successors(G,preds(j))) > 1;
                 if isResidualConn
                     % Prepend the empty cell for the j-th computation path.
                     layersPreds = [layersPreds; {{}}];
+                    % Append final node.
+                    nSucc = [nSucc ni];
+                    ni = preds(j);
                 else
                     % Compute the layers of the j-th computation path.
-                    [layersj,ni] = aux_buildNestedCellArray(G,dltLayers,preds(j));
+                    [layersj,G,ni,nSuccj] = aux_buildNestedCellArray( ...
+                        dltLayers,G,preds(j),[]);
                     % Prepend the layers of the j-th computation path.
                     layersPreds = [layersPreds; {layersj}];
+                    % Append final node.
+                    nSucc = [nSucc nSuccj];
                 end
             end
             % Traversed all computation paths; prepend the layers.
             layers = [{layersPreds} layers];
-            % Update the starting node.
-            nK = ni;
+            % % Update the starting node.
+            % nSucc = ni;
+        else
+            % There is only a single predecessor; move to the only 
+            % predecessor.
+            nSucc = ni;
+            ni = preds(1);
         end
+
         % Increment iteration counter.
         iter = iter + 1;
     end

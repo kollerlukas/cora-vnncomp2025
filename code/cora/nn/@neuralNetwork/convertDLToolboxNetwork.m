@@ -1,13 +1,13 @@
-function obj = convertDLToolboxNetwork(dltoolbox_layers, verbose)
+function obj = convertDLToolboxNetwork(dlt_layers, verbose)
 % convertDLToolboxNetwork - converts a network from the Deep Learning
 %    Toolbox to a CORA neuralNetwork for verification
 %
 % Syntax:
-%    res = neuralNetwork.convertDLToolboxNetwork(dltoolbox_layers)
-%    res = neuralNetwork.convertDLToolboxNetwork(dltoolbox_layers,verbose)
+%    res = neuralNetwork.convertDLToolboxNetwork(dlt_layers)
+%    res = neuralNetwork.convertDLToolboxNetwork(dlt_layers,verbose)
 %
 % Inputs:
-%    dltoolbox_layers - layer array (e.g. dltoolbox_nn.Layers)
+%    dlt_layers - layer array (e.g. dltoolbox_nn.Layers)
 %    verbose - true/false whether information should be displayed
 %
 % Outputs:
@@ -43,7 +43,7 @@ inputSize = [];
 currentSize = [];
 
 % Convert the layers in the nested cell array.
-[layers,inputSize,~] = aux_convertLayers(dltoolbox_layers, ...
+[layers,inputSize,~] = aux_convertLayers(dlt_layers, ...
     inputSize,currentSize,verbose);
 
 % instantiate neural network
@@ -70,14 +70,18 @@ end
 % Auxiliary functions -----------------------------------------------------
 
 function [layers,inputSize,currentSize] = aux_convertLayers( ...
-        dltoolbox_layers,inputSize,currentSize,verbose)
+        dlt_layers,inputSize,currentSize,verbose)
     % Initialize the layers cell array.
     layers = {};
 
+    % Needed to separate different input for reshape layers that are
+    % followed by a composite layer.
+    nextInputIdx = {};
+
     % Recursively convert the layers in the nested cell array.
-    for i=1:length(dltoolbox_layers)
+    for i=1:length(dlt_layers)
         % Obtain the i-th layer.
-        dlt_layer = dltoolbox_layers{i};
+        dlt_layer = dlt_layers{i};
         
         if iscell(dlt_layer)
             if verbose
@@ -87,16 +91,28 @@ function [layers,inputSize,currentSize] = aux_convertLayers( ...
             layersi = {};
             % Iterate the computation paths.
             for j=1:length(dlt_layer)
+                if ~isempty(nextInputIdx)
+                    % Construct the reshape layers that reshapes the input
+                    % of the j-th computation path.
+                    reshapeIdx = reshape(nextInputIdx{j},1,[]);
+                    preshapeLayer = nnReshapeLayer( ...
+                        reshapeIdx,dlt_layers{i-1}.Name);
+                    currentSize = size(nextInputIdx{j});
+                end
                 % Convert the j-th computation path.
                 [layersij,~,~] = aux_convertLayers( ...
                     dlt_layer{j},inputSize,currentSize,verbose);
+                if ~isempty(nextInputIdx)
+                    % Prepend the reshape layer.
+                    layersij = [{preshapeLayer}; layersij];
+                end
                 % Append the converted layers.
                 layersi{j} = layersij;
             end
             % Increment the index to obtain aggregation layer.
             i = i+1;
             % Obtain the aggregation layer.
-            aggr_dlt_layer = dltoolbox_layers{i};
+            aggr_dlt_layer = dlt_layers{i};
             % Check the type of aggregation layer.
             if isa(aggr_dlt_layer,'nnet.cnn.layer.AdditionLayer')
                 aggregation = 'add';
@@ -112,13 +128,15 @@ function [layers,inputSize,currentSize] = aux_convertLayers( ...
             layers{end+1} = compLayer;
             % Update the output size.
             currentSize = layers{end}.getOutputSize(currentSize);
+            % Reset the input indices.
+            nextInputIdx = {};
         else
             if verbose
                 fprintf("#%d: %s\n", i, class(dlt_layer))
             end
             % Just append a regular layer.
-            [layers,inputSize_,currentSize] = aux_convertLayer(layers, ...
-                dlt_layer,currentSize,verbose);
+            [layers,inputSize_,currentSize,nextInputIdx] = ...
+                aux_convertLayer(layers,dlt_layer,currentSize,verbose);
             if isempty(inputSize)
                 inputSize = inputSize_;
             end
@@ -127,7 +145,15 @@ function [layers,inputSize,currentSize] = aux_convertLayers( ...
     layers = reshape(layers, [], 1); % 1 column
 end
 
-function [layers,inputSize,currentSize] = aux_convertLayer(layers,dlt_layer,currentSize,verbose)
+function [layers,inputSize,currentSize,nextInputIdx] = ...
+        aux_convertLayer(layers,dlt_layer,currentSize,verbose)
+    % By default all inputs are given to the next layer; for reshape layers
+    % with multiple input we can encode the path of the inputs.
+    nextInputIdx = {};
+
+    % Initialize the input size.
+    inputSize = [];
+
     % handle different types of layers
     if isa(dlt_layer, 'nnet.cnn.layer.ImageInputLayer') || ...
             isa(dlt_layer, 'nnet.cnn.layer.FeatureInputLayer')
@@ -145,6 +171,10 @@ function [layers,inputSize,currentSize] = aux_convertLayer(layers,dlt_layer,curr
             layers{end+1} = nnElementwiseAffineLayer(1/sigma, ...
                 -mu./sigma,dlt_layer.Name);
         end
+        currentSize = inputSize;
+        return
+    elseif isa(dlt_layer,'nnet.cnn.layer.SequenceInputLayer')
+        inputSize = [dlt_layer.InputSize dlt_layer.MinLength];
         currentSize = inputSize;
         return
 
@@ -267,9 +297,21 @@ function [layers,inputSize,currentSize] = aux_convertLayer(layers,dlt_layer,curr
         
         idx = dlarray(1:prod(currentSize));
         idx = reshape(idx, currentSize);
-        idx_out = dlt_layer.predict(idx);
-        idx_out = double(extractdata(idx_out));
-        layers{end+1} = nnReshapeLayer(idx_out, dlt_layer.Name);
+
+        idx_out = cell(1,dlt_layer.NumOutputs);
+        [idx_out{:}] = dlt_layer.predict(idx);
+        idx_out = cellfun(@(idx) double(extractdata(idx)),idx_out, ...
+            'UniformOutput',false);
+
+        if length(idx_out) > 1
+            % There are multiple successor layer. We prepend the reshape
+            % layer to each computation path.
+            nextInputIdx = idx_out;
+        else
+            % There is only a single successor layer.
+            layers{end+1} = nnReshapeLayer(idx_out{1}, dlt_layer.Name);
+        end
+        return;
 
     elseif strcmp(dlt_layer.Name, 'MatMul_To_ReluLayer1003')
         % for VNN Comp (test -- test_nano.onnx)
@@ -339,8 +381,8 @@ function [layers,inputSize,currentSize] = aux_convertLayer(layers,dlt_layer,curr
         inputSize = [];
         return
     end
+    % Update the current size.
     currentSize = layers{end}.getOutputSize(currentSize);
-    inputSize = [];
 end
 
 end

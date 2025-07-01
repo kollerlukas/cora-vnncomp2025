@@ -521,8 +521,9 @@ while size(xs,2) > 0
                             repmat((1:numInitGens)',1,cbSz), ...
                             repelem(1:cbSz,numInitGens,1)),[numInitGens cbSz]);
                         % Compute gradient of the interval norm.
-                        hi = reshape(ivalGrad(dimGenIdx),[numInitGens cbSz]) ...
-                            .*ri(permIdx);
+                        % hi = reshape(ivalGrad(dimGenIdx),[numInitGens cbSz]) ...
+                        %     .*ri(permIdx);
+                        hi = log(reshape(ivalGrad(dimGenIdx),[numInitGens cbSz]) + 1).*ri(permIdx);
                 end
 
                 % Compute input-split constraints.
@@ -551,12 +552,16 @@ while size(xs,2) > 0
             % Check contained of the refined sets.
             isContained = aux_isContained(xi(:,~isEmpty),ri(:,~isEmpty));
             % Check the specification for the points.
-            [~,critVal,falsified,x_,y_] = aux_checkPoints(nn,options, ...
-                idxLayer,A,b,safeSet,xi(:,~isEmpty));
-            if any(falsified)
-                % Found a counterexample.
-                res.str = 'COUNTEREXAMPLE';
-                break;
+            if any(~isEmpty)
+                [~,critVal,falsified,x_,y_] = aux_checkPoints(nn,options, ...
+                    idxLayer,A,b,safeSet,xi(:,~isEmpty));
+                if any(falsified)
+                    % Found a counterexample.
+                    res.str = 'COUNTEREXAMPLE';
+                    break;
+                end
+            else
+                critVal = [];
             end
             % Identify which sets were refined to just being a point.
             isPoint = all(ri(:,~isEmpty) == 0,1);

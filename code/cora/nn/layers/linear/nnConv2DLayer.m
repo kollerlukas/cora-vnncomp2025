@@ -102,7 +102,6 @@ methods  (Access = {?nnLayer, ?neuralNetwork})
     function r = evaluateNumeric(obj, input, options)
         obj.checkInputSize()
         [r,Wff] = obj.conv2d(input,options,'sparseIdx');
-
     end
 
     % numeric
