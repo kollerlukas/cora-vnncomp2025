@@ -231,7 +231,7 @@ function [layers,G,ni,nSucc] = aux_buildNestedCellArray(dltLayers,G, ...
             % Mark the edge as visited by setting the weight to 0.
             G.Edges.Weight(edgeIdx) = 0;
             
-            % Visualization for debugging.
+            % % Visualization for debugging.
             % plot(G,'EdgeLabel', G.Edges.Weight, ...
             %     'NodeLabel', cellfun(@(name) findnode(G,name),G.Nodes.Name));
         end
@@ -280,7 +280,7 @@ function [layers,G,ni,nSucc] = aux_buildNestedCellArray(dltLayers,G, ...
                     ni = preds(j);
                 else
                     % Compute the layers of the j-th computation path.
-                    [layersj,G,ni,nSuccj] = aux_buildNestedCellArray( ...
+                    [layersj,G,nij,nSuccj] = aux_buildNestedCellArray( ...
                         dltLayers,G,preds(j),[]);
                     % Prepend the layers of the j-th computation path.
                     layersPreds = [layersPreds; {layersj}];
@@ -290,8 +290,8 @@ function [layers,G,ni,nSucc] = aux_buildNestedCellArray(dltLayers,G, ...
             end
             % Traversed all computation paths; prepend the layers.
             layers = [{layersPreds} layers];
-            % % Update the starting node.
-            % nSucc = ni;
+            % Update the current node.
+            ni = nij;
         else
             % There is only a single predecessor; move to the only 
             % predecessor.
