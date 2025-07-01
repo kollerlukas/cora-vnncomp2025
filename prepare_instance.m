@@ -193,15 +193,14 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       % options.nn.num_relu_constraints = 100;
   elseif strcmp(benchName,'nn4sys')
       % nn4sys ----------------------------------------------------------
-      if ~strcmp(modelName{1},'lindex') && ...
-              ~strcmp(modelName{1},'lindex_deep')
-          % Skip this instance.
-          throw(CORAerror('CORA:notSupported',...
-              sprintf("Model '%s' of benchmark '%s' is not " + ...
-              "supported!",modelPath,benchName)));
+      if strcmp(modelName{1},'lindex') || strcmp(modelName{1},'lindex_deep')
+        nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC','BC');
+      else
+        % nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCT','BC', ...
+        %     'dagnetwork',true);
+        throw(CORAerror('CORA:notSupported',...
+          sprintf("Networks not supported '%s'!",modelName)));
       end
-      nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BC','BC');
-      % Use the default parameters.
   elseif strcmp(benchName,'relusplitter')
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'CSS');
   elseif strcmp(benchName,'safenlp_2024')
@@ -216,7 +215,7 @@ function [nn,options,permuteDims] = aux_readNetworkAndOptions( ...
       options.nn.train.num_init_gens = inf;
       options.nn.train.num_approx_err = 100;
       % Reduce the batch size.
-      options.nn.train.mini_batch_size = 2^2;
+      % options.nn.train.mini_batch_size = 2^2;
   elseif strcmp(benchName,'tinyimagenet_2024')
       % tinyimagenet ----------------------------------------------------
       nn = neuralNetwork.readONNXNetwork(modelPath,verbose,'BCSS', ...
