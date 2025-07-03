@@ -167,4 +167,11 @@ function [resStr,res] = run_instance(benchName,modelPath,vnnlibPath, ...
         fprintf('--- Verification time: %.4f / %.4f [s]\n',time,timeout);
     end
 
+    % Clear variables.
+    clearvars -except gpuDevice resStr res
+    % Reset GPU.
+    reset(gpuDevice);
+    % De-select GPU.
+    gpuDevice([]);
+
 end
