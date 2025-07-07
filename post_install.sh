@@ -8,7 +8,7 @@ echo post_install.sh running..
 USER_NAME=ubuntu
 LICENSE_URL='https://drive.google.com/uc?export=download&id=<file-id>'
 
-MATLAB_RELEASE=2024b
+MATLAB_RELEASE=2024a
 EXISTING_MATLAB_LOCATION=$(dirname $(dirname $(readlink -f $(which matlab))))
 
 # define required products (remove already installed products..)
