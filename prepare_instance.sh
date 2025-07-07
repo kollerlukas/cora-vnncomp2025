@@ -24,8 +24,6 @@ echo "Preparing $TOOL_NAME for benchmark instance '$BENCHMARK' with onnx file '$
 
 nvidia-smi
 
-sudo matlab -nodisplay -r "prepare_instance('$BENCHMARK','$ONNX_FILE','$VNNLIB_FILE'); quit;"
-
-nvidia-smi
+matlab -nodisplay -r "prepare_instance('$BENCHMARK','$ONNX_FILE','$VNNLIB_FILE'); quit;"
 
 exit 0
