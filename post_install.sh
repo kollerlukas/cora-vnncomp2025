@@ -65,6 +65,8 @@ sudo add-apt-repository ppa:graphics-drivers/ppa --yes
 sudo apt update
 sudo apt --fix-broken install
 
+nvidia-smi
+
 # -------------------------------------------------------------------------
 # DONE
 echo post_install.sh done
