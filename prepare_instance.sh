@@ -22,6 +22,8 @@ VNNLIB_FILE=$4
 
 echo "Preparing $TOOL_NAME for benchmark instance '$BENCHMARK' with onnx file '$ONNX_FILE' and vnnlib file '$VNNLIB_FILE'"
 
+nvidia-smi
+
 matlab -nodisplay -r "prepare_instance('$BENCHMARK','$ONNX_FILE','$VNNLIB_FILE'); quit;"
 
 exit 0
