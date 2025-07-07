@@ -198,8 +198,8 @@ function layers = aux_groupCompositeLayers(layerslist, connections)
         G,nK,[]);
 end
 
-function [layers,G,ni,nSucc] = aux_buildNestedCellArray(dltLayers,G, ...
-    nK,nSucc)
+function [layers,G,ni,currEdgeIdx] = aux_buildNestedCellArray(dltLayers,G, ...
+    nK,currEdgeIdx)
     % We use a reverse depth-first traversal to construct a nested cell
     % array. We have to reverse the traversal to avoid not creating nested 
     % cells. 
@@ -212,12 +212,23 @@ function [layers,G,ni,nSucc] = aux_buildNestedCellArray(dltLayers,G, ...
     iter = 1;
     % Traverse the graph and build the nested cell array.
     while iter < height(G.Nodes)
-        % Obtain the successors.
-        succs = successors(G,ni);
 
-        if length(succs) > 1 
-            % We reached a forking node. 
-            if ~isempty(setdiff(succs,nSucc))
+        if ~isempty(currEdgeIdx)
+            % Mark the current edge as visited by setting the weight to 0.
+            G.Edges.Weight(currEdgeIdx) = 0;
+            
+            % % Visualization for debugging.
+            % plot(G,'EdgeLabel', G.Edges.Weight, ...
+            %     'NodeLabel', cellfun(@(name) findnode(G,name),G.Nodes.Name));
+        end
+
+        % Obtain the successors.
+        outEdgeIdx = outedges(G,ni);
+
+        if length(outEdgeIdx) > 1 
+            % There are multiple computation paths starting at this node; 
+            % we reached a forking node.
+            if ~isempty(setdiff(outEdgeIdx,currEdgeIdx)) % any(G.Edges.Weight(outEdgeIdx) > 0)
                 % There are still outgoing computation paths that have 
                 % not been visited. We break out of the current 
                 % computation path.
@@ -225,32 +236,18 @@ function [layers,G,ni,nSucc] = aux_buildNestedCellArray(dltLayers,G, ...
             end
         end
 
-        if ~isempty(nSucc)
-            % Find the index of the current edge (ni,nSucc).
-            edgeIdx = findedge(G,ni,nSucc);
-            % Mark the edge as visited by setting the weight to 0.
-            G.Edges.Weight(edgeIdx) = 0;
-            
-            % % Visualization for debugging.
-            % plot(G,'EdgeLabel', G.Edges.Weight, ...
-            %     'NodeLabel', cellfun(@(name) findnode(G,name),G.Nodes.Name));
-        end
-
         % Prepend the current layer.
         layers = [dltLayers(ni) layers];
 
-        % Obtain the predecessors.
-        preds = predecessors(G,ni);
+        % Obtain all incoming edges.
+        inEdgeIdx = inedges(G,ni);
 
-        if isempty(preds)
-            % There are no predecessors; we have reached the input node.
+        if isempty(inEdgeIdx)
+            % There are no incoming edges; we have reached the input node.
             break;
         end
 
-        % Find the indices of the edges to all predecessors.
-        edgeIdx = findedge(G,preds,ni);
-
-        if length(preds) > 1
+        if length(inEdgeIdx) > 1
             % There are multiple computation paths merging in the current
             % node. We have to construct the layer cell arrays for each
             % computation path.
@@ -258,34 +255,37 @@ function [layers,G,ni,nSucc] = aux_buildNestedCellArray(dltLayers,G, ...
 
             % Find the weight of the edges, which encode the order 
             % (required for concatenation).
-            ws = G.Edges.Weight(edgeIdx)';
+            ws = G.Edges.Weight(inEdgeIdx)';
             % Sort the predecessors based on the edge weight.
             [~,predIdx] = sort(ws,'ascend');
 
-            % Store final nodes of each computation path.
-            nSucc = [];
+            % Store edges of each computation path.
+            currEdgeIdx = [];
 
             % Create a new computation path for each predecessor.
             for j=predIdx
                 % Mark the edge as visited by setting the weight to 0.
-                G.Edges.Weight(edgeIdx(j)) = 0;
+                G.Edges.Weight(inEdgeIdx(j)) = 0;
+                % Obtain the start of the j-th predecessor edge.
+                predj = findnode(G,G.Edges.EndNodes{inEdgeIdx(j),1});
                 % Check if the computation path is just a residual
-                % connection.
-                isResidualConn = length(successors(G,preds(j))) > 1;
+                % connection (has multiple outedges).
+                isResidualConn = length(outedges(G,predj)) > 1;
                 if isResidualConn
                     % Prepend the empty cell for the j-th computation path.
                     layersPreds = [layersPreds; {{}}];
-                    % Append final node.
-                    nSucc = [nSucc ni];
-                    ni = preds(j);
+                    % Append the residual edge.
+                    currEdgeIdx = [currEdgeIdx inEdgeIdx(j)];
+                    % Update the current node.
+                    nij = predj;
                 else
                     % Compute the layers of the j-th computation path.
-                    [layersj,G,nij,nSuccj] = aux_buildNestedCellArray( ...
-                        dltLayers,G,preds(j),[]);
+                    [layersj,G,nij,currEdgeIdxj] = ...
+                        aux_buildNestedCellArray(dltLayers,G,predj,[]);
                     % Prepend the layers of the j-th computation path.
                     layersPreds = [layersPreds; {layersj}];
                     % Append final node.
-                    nSucc = [nSucc nSuccj];
+                    currEdgeIdx = [currEdgeIdx currEdgeIdxj];
                 end
             end
             % Traversed all computation paths; prepend the layers.
@@ -293,10 +293,10 @@ function [layers,G,ni,nSucc] = aux_buildNestedCellArray(dltLayers,G, ...
             % Update the current node.
             ni = nij;
         else
-            % There is only a single predecessor; move to the only 
+            % There is only a single incoming edge; move to the only 
             % predecessor.
-            nSucc = ni;
-            ni = preds(1);
+            currEdgeIdx = inEdgeIdx(1);
+            ni = findnode(G,G.Edges.EndNodes{inEdgeIdx(1),1});
         end
 
         % Increment iteration counter.

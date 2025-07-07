@@ -648,7 +648,7 @@ end
 % Store time.
 res.time = toc(timerVal);
 % Store number of verified patches.
-res.numVerified = numVerified;
+res.numVerified = gather(numVerified);
 
 if verbose
     % Compute final stats.
