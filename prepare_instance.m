@@ -1,4 +1,7 @@
 function res = prepare_instance(benchName,modelPath,vnnlibPath)
+  % Initialize error.
+  e = [];
+
   fprintf('prepare_instance(%s,%s,%s)...\n',benchName,modelPath,vnnlibPath);
   try
       fprintf('--- Loading network...');
@@ -27,11 +30,16 @@ function res = prepare_instance(benchName,modelPath,vnnlibPath)
   catch e
       % Print the error message. 
       printErrorMessage(e)
-      % Some error
-      res = 1;
       return;
   end
-  res = 0;
+  res = isempty(e);
+
+  % Clear variables.
+  clearvars -except res
+  % Reset GPU.
+  reset(gpuDevice);
+  % De-select GPU.
+  gpuDevice([]);
 end
 
 % Auxiliary functions -----------------------------------------------------
