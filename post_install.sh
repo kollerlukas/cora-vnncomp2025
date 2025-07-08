@@ -12,7 +12,6 @@ MATLAB_RELEASE=2024a
 EXISTING_MATLAB_LOCATION=$(dirname $(dirname $(readlink -f $(which matlab))))
 
 # define required products (remove already installed products..)
-# ADDITIONAL_PRODUCTS="Symbolic_Math_Toolbox Optimization_Toolbox Statistics_and_Machine_Learning_Toolbox Deep_Learning_Toolbox Deep_Learning_Toolbox_Converter_for_ONNX_Model_Format Parallel_Computing_Toolbox"
 ADDITIONAL_PRODUCTS="Deep_Learning_Toolbox_Converter_for_ONNX_Model_Format"
 
 CURR_DIR=$(pwd)
@@ -61,11 +60,40 @@ matlab -nodisplay -r "cd ${CURR_DIR}; addpath(genpath('.')); installCORA(false,t
 
 # -------------------------------------------------------------------------
 # FIX GPU DRIVER ISSUES
-sudo add-apt-repository ppa:graphics-drivers/ppa --yes
-sudo apt update
-sudo apt --fix-broken install
+#!/bin/bash
+set -e  # Exit on error
 
-nvidia-smi
+# -------------------------
+# 1. Remove any existing NVIDIA drivers and CUDA
+# -------------------------
+sudo apt-get purge -y '*nvidia*'
+sudo apt-get autoremove -y
+sudo rm -rf /usr/local/cuda*
+sudo rm -rf /var/lib/dkms/nvidia
+
+# -------------------------
+# 2. Install dependencies for building kernel modules
+# -------------------------
+sudo apt-get update
+sudo apt-get install -y build-essential dkms linux-headers-$(uname -r) gcc make
+
+# -------------------------
+# 3. Download the correct NVIDIA driver (535.154.05)
+#    Compatible with A10G + MATLAB R2024a (CUDA 12.2)
+# -------------------------
+cd /tmp
+wget https://us.download.nvidia.com/XFree86/Linux-x86_64/535.154.05/NVIDIA-Linux-x86_64-535.154.05.run
+chmod +x NVIDIA-Linux-x86_64-535.154.05.run
+
+# -------------------------
+# 4. Run the installer in silent mode (no GUI)
+#    --dkms builds the kernel module
+# -------------------------
+sudo ./NVIDIA-Linux-x86_64-535.154.05.run --silent --dkms
+
+# -------------------------
+# 5. All done — reboot ONCE manually after this script completes
+# -------------------------
 
 # -------------------------------------------------------------------------
 # DONE
