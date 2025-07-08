@@ -60,40 +60,11 @@ matlab -nodisplay -r "cd ${CURR_DIR}; addpath(genpath('.')); installCORA(false,t
 
 # -------------------------------------------------------------------------
 # FIX GPU DRIVER ISSUES
-#!/bin/bash
-set -e  # Exit on error
 
-# -------------------------
-# 1. Remove any existing NVIDIA drivers and CUDA
-# -------------------------
-sudo apt-get purge -y '*nvidia*'
-sudo apt-get autoremove -y
-sudo rm -rf /usr/local/cuda*
-sudo rm -rf /var/lib/dkms/nvidia
-
-# -------------------------
-# 2. Install dependencies for building kernel modules
-# -------------------------
-sudo apt-get update
-sudo apt-get install -y build-essential dkms linux-headers-$(uname -r) gcc make
-
-# -------------------------
-# 3. Download the correct NVIDIA driver (535.154.05)
-#    Compatible with A10G + MATLAB R2024a (CUDA 12.2)
-# -------------------------
-cd /tmp
-wget https://us.download.nvidia.com/XFree86/Linux-x86_64/535.154.05/NVIDIA-Linux-x86_64-535.154.05.run
-chmod +x NVIDIA-Linux-x86_64-535.154.05.run
-
-# -------------------------
-# 4. Run the installer in silent mode (no GUI)
-#    --dkms builds the kernel module
-# -------------------------
-sudo ./NVIDIA-Linux-x86_64-535.154.05.run --silent --dkms
-
-# -------------------------
-# 5. All done — reboot ONCE manually after this script completes
-# -------------------------
+# Enable GPU persistence mode (prevents driver unloading)
+sudo nvidia-smi -pm 1
+# Set stable memory and graphics clocks for A10G
+sudo nvidia-smi -ac 5001,1230
 
 # -------------------------------------------------------------------------
 # DONE
