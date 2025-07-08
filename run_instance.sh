@@ -27,6 +27,9 @@ TIMEOUT=$6
 
 echo "Running $TOOL_NAME on benchmark instance $BENCHMARK with onnx file $ONNX_FILE, vnnlib file $VNNLIB_FILE, results file $RESULTS_FILE, and timeout $TIMEOUT"
 
+# Reset GPU without rebooting
+sudo nvidia-smi --gpu-reset -i 0
+
 nvidia-smi
 
 sudo matlab -nodisplay -r "run_instance('$BENCHMARK','$ONNX_FILE','$VNNLIB_FILE','$RESULTS_FILE',$TIMEOUT,true); quit;"
