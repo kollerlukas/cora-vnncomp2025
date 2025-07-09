@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# example run_instance.sh script for VNNCOMP 2024 for CORA
+# example run_instance.sh script for VNNCOMP'25 for CORA
 # Arguments:
 # - version string "v1", 
 # - benchmark identifier string, e.g., "acasxu", 
