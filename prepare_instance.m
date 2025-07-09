@@ -34,12 +34,18 @@ function res = prepare_instance(benchName,modelPath,vnnlibPath)
   end
   res = isempty(e);
 
-  % Clear variables.
-  clearvars -except res
-  % Reset GPU.
-  reset(gpuDevice);
-  % De-select GPU.
-  gpuDevice([]);
+  try
+    % Clear variables.
+    clearvars -except res
+    % Reset GPU.
+    reset(gpuDevice);
+    % De-select GPU.
+    gpuDevice([]);
+  catch e
+    % Print the error message. 
+    printErrorMessage(e)
+    return;
+  end
 end
 
 % Auxiliary functions -----------------------------------------------------
@@ -265,7 +271,8 @@ function aux_printOptions(options)
     table.printContentRow('Poly. Method',options.nn.poly_method);
     table.printContentRow('Batchsize', ...
         string(options.nn.train.mini_batch_size));
-    table.printContentRow('Interval Center',options.nn.interval_center);
+    table.printContentRow('Interval Center', ...
+        string(options.nn.interval_center));
     table.printContentRow('Num. init. Generators', ...
         string(options.nn.train.num_init_gens));
     table.printContentRow('Num. approx. Error (per nonl. Layer)', ...
