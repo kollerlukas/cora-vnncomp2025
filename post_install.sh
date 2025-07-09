@@ -63,8 +63,10 @@ matlab -nodisplay -r "cd ${CURR_DIR}; addpath(genpath('.')); installCORA(false,t
 
 # Enable GPU persistence mode (prevents driver unloading)
 sudo nvidia-smi -pm 1
-# Set stable memory and graphics clocks for A10G
-sudo nvidia-smi -ac 5001,1230
+
+# Lock the kernenl verison and GPU drivers.
+sudo apt-mark hold linux-image-generic linux-headers-generic nvidia-driver-535
+sudo systemctl disable unattended-upgrades
 
 # -------------------------------------------------------------------------
 # DONE
