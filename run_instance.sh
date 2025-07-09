@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# example run_instance.sh script for VNNCOMP 2024 for CORA
+# example run_instance.sh script for VNNCOMP'25 for CORA
 # Arguments:
 # - version string "v1", 
 # - benchmark identifier string, e.g., "acasxu", 
@@ -27,9 +27,7 @@ TIMEOUT=$6
 
 echo "Running $TOOL_NAME on benchmark instance $BENCHMARK with onnx file $ONNX_FILE, vnnlib file $VNNLIB_FILE, results file $RESULTS_FILE, and timeout $TIMEOUT"
 
-# Reset GPU without rebooting
-sudo nvidia-smi --gpu-reset -i 0
-
+# Check GPU status.
 nvidia-smi
 
 sudo matlab -nodisplay -r "run_instance('$BENCHMARK','$ONNX_FILE','$VNNLIB_FILE','$RESULTS_FILE',$TIMEOUT,true); quit;"

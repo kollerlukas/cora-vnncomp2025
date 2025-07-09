@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Example prepare_instance.sh script for VNNCOMP 2024 for CORA.
+# Example prepare_instance.sh script for VNNCOMP'25 for CORA.
 # Arguments:
 # - version string "v1", 
 # - benchmark identifier string, e.g., "acasxu", 
@@ -22,6 +22,7 @@ VNNLIB_FILE=$4
 
 echo "Preparing $TOOL_NAME for benchmark instance '$BENCHMARK' with onnx file '$ONNX_FILE' and vnnlib file '$VNNLIB_FILE'"
 
+# Check GPU status.
 nvidia-smi
 
 sudo matlab -nodisplay -r "prepare_instance('$BENCHMARK','$ONNX_FILE','$VNNLIB_FILE'); quit;"
