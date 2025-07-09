@@ -22,6 +22,7 @@ VNNLIB_FILE=$4
 
 echo "Preparing $TOOL_NAME for benchmark instance '$BENCHMARK' with onnx file '$ONNX_FILE' and vnnlib file '$VNNLIB_FILE'"
 
+# Check GPU status.
 nvidia-smi
 
 sudo matlab -nodisplay -r "prepare_instance('$BENCHMARK','$ONNX_FILE','$VNNLIB_FILE'); quit;"
