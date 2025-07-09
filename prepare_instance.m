@@ -11,7 +11,7 @@ function res = prepare_instance(benchName,modelPath,vnnlibPath)
 
       fprintf(' done\n');
 
-      fprintf('--- GPU available: %d\n',options.nn.train.use_gpu);
+      fprintf('--- GPU available: %s\n',string(options.nn.train.use_gpu));
    
       fprintf('--- Loading specification...');
       % Load specification.

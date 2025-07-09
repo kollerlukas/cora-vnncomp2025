@@ -27,6 +27,8 @@ function [resStr,res] = run_instance(benchName,modelPath,vnnlibPath, ...
         delete(instanceFilename);
         fprintf(' done\n');
 
+        fprintf('--- GPU available: %s\n',string(options.nn.train.use_gpu));
+
         % Obtain the model name.
         if permuteDims
             if startsWith(benchName,'collins_rul_cnn') ...
