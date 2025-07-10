@@ -213,7 +213,8 @@ inputSplitHeuristic = 'ival-norm-gradient';
 %  {'least-unstable', 
 %   'most-sensitive-approx-error',
 %   'most-sensitive-input-radius',
-%   'ival-norm-gradient'}.
+%   'ival-norm-gradient',
+%   'most-sensitive-input-aligned'}.
 neuronSplitHeuristic = 'ival-norm-gradient';
 
 % The inputs are needed for the neuron splitting, relu tightening 
@@ -620,9 +621,12 @@ while size(xs,2) > 0
         if exist('hx_','var')
             cellfun(@(hxi_) delete(hxi_), hx_);
         end
-        % Remove empty and contained sets.
-        li(:,remIdx) = [];
-        ui(:,remIdx) = [];
+        % Compute the bounds of the new sets.
+        li = xi - ri;
+        ui = xi + ri;
+        if ~exist('isContained','var')
+            isContained = zeros([size(li,2) 1],'logical');
+        end
         % Plot the unsafe output sets and the new input sets.
         [fig,huy,huy_,hux,hx,hx_] = ...
             aux_plotUnsafeOutputAndNewInputSets(fig,plotDims,res, ...
@@ -1609,6 +1613,12 @@ function [As,bs,nrIdx] = aux_neuronConstraints(nn,options, ...
                 ivalGrad = layeri.backprop.store.approx_error_gradients;
                 % Compute the heuristic.
                 hi = dr.*ivalGrad;
+            case 'most-sensitive-input-aligned'
+                % Compute an alignment score.
+                algnScr = reshape(max(abs(Gi(:,1:numInitGens,:)),[],2)...
+                    ./(sum(abs(Gi(:,1:numInitGens,:)),2) + 1e-6),[nk bSz]);
+                % Compute the heuristic.
+                hi = dr.*ri.*algnScr.*(2^i);
         end
 
         % Only consider unstable neurons. 
@@ -1680,6 +1690,7 @@ function [As,bs,nrIdx] = aux_neuronConstraints(nn,options, ...
         nrIdx.dimIdx = reshape(nrIdx.dimIdx(idx(1:nNeur_,:)),...
             [nNeur_ bSz]);
     end
+
     % Transpose constraint matrix.
     As = permute(As,[2 1 3]);
     bs = permute(bs,[2 1 3]);

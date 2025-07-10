@@ -307,11 +307,11 @@ function [layers,inputSize,currentSize,nextInputIdx] = ...
             % There are multiple successor layer. We prepend the reshape
             % layer to each computation path.
             nextInputIdx = idx_out;
+            return;
         else
             % There is only a single successor layer.
             layers{end+1} = nnReshapeLayer(idx_out{1}, dlt_layer.Name);
         end
-        return;
 
     elseif strcmp(dlt_layer.Name, 'MatMul_To_ReluLayer1003')
         % for VNN Comp (test -- test_nano.onnx)
