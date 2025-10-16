@@ -1,5 +1,7 @@
 # CORA (VNN-COMP 2025)
 
-TODO: 
-1. Clone `cora` into the `./code/cora` directory.
-2. Clone `vnncomp2024_benchmarks` into the `./vnncomp2024_benchmarks` directory.
+This repository contains the necessary scripts to interface [CORA](https://cora.in.tum.de/) with the [VNN-COMP'25](https://sites.google.com/view/vnn2025).
+
+## Getting Started
+
+Clone the repository with the VNN-COMP'25 benchmarks into the `./vnncomp2025_benchmarks` directory.
